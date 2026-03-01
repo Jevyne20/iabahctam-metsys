@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matcha POS | System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="branch-screen" class="overlay">
+        <div class="branch-card">
+            <h2>Select Branch</h2>
+            <p>Choose a location to begin</p>
+            <div id="branch-list" class="branch-options">
+                <button onclick="selectBranch('Main Branch')">Main Branch</button>
+            </div>
+            <button class="add-branch-trigger" onclick="openAddBranchModal()">Add Branch +</button>
+        </div>
+    </div>
+
+    <div id="add-branch-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3>New Branch</h3>
+            <input type="text" id="new-branch-input" placeholder="Enter Branch Name">
+            <div class="modal-actions">
+                <button class="cancel-btn" onclick="closeAddBranchModal()">Cancel</button>
+                <button class="done-btn" onclick="saveNewBranch()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-system" class="hidden">
+        <header>
+            <button class="menu-toggle" onclick="toggleMenu()">☰ Menu</button>
+            <div class="header-info">
+                <span id="active-branch-display">Branch: None</span>
+            </div>
+        </header>
+
+        <div id="sidebar" class="sidebar">
+            <button class="close-btn" onclick="toggleMenu()">×</button>
+            <nav>
+                <button onclick="navigateTo('pos')">POS System</button>
+                <button onclick="navigateTo('sales')">Sales Log</button>
+                <button onclick="navigateTo('attendance')">Attendance</button>
+                <button onclick="navigateTo('expenses')">Expenses</button>
+                <hr style="border: 0.5px solid #455a64; margin: 20px 0;">
+                <button onclick="location.reload()" style="color: #ff5252;">Switch Branch</button>
+            </nav>
+        </div>
+
+        <div class="content">
+            <section id="pos" class="active">
+                <h1>POS System</h1>
+                <p>Welcome! Record your orders here.</p>
+                </section>
+
+            <section id="sales">
+                <h1>Sales Log</h1>
+                <p>Daily transaction history.</p>
+            </section>
+
+            <section id="attendance">
+                <h1>Attendance</h1>
+                <p>Monitor Employee Time In/Out.</p>
+            </section>
+
+            <section id="expenses">
+                <h1>Expenses</h1>
+                <p>Track your daily costs.</p>
+            </section>
+        </div>
+    </div>
+
+<script>
+    window.onload = function() {
+        renderBranches();
+    };
+
+    function renderBranches() {
+        const list = document.getElementById("branch-list");
+        let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
+        
+        // Start with the default Main Branch (which cannot be deleted)
+        let html = `<div class="branch-item">
+                        <button onclick="selectBranch('Main Branch')">Main Branch</button>
+                    </div>`;
+
+        // Add custom branches with a Delete button
+        branches.forEach((branch, index) => {
+            html += `
+                <div class="branch-item">
+                    <button onclick="selectBranch('${branch}')">${branch}</button>
+                    <span class="delete-icon" onclick="deleteBranch(${index})">×</span>
+                </div>`;
+        });
+        
+        list.innerHTML = html;
+    }
+
+    function deleteBranch(index) {
+        if (confirm("Are you sure you want to delete this branch?")) {
+            let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
+            branches.splice(index, 1); // Remove the branch at that index
+            localStorage.setItem("matchaBranches", JSON.stringify(branches));
+            renderBranches(); // Refresh the list
+        }
+    }
+
+    function openAddBranchModal() {
+        document.getElementById("add-branch-modal").classList.remove("hidden");
+        document.getElementById("new-branch-input").focus();
+    }
+
+    function closeAddBranchModal() {
+        document.getElementById("add-branch-modal").classList.add("hidden");
+        document.getElementById("new-branch-input").value = "";
+    }
+
+    function saveNewBranch() {
+        const name = document.getElementById("new-branch-input").value;
+        if (name.trim() === "") return alert("Please enter a branch name");
+
+        let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
+        branches.push(name);
+        localStorage.setItem("matchaBranches", JSON.stringify(branches));
+        
+        renderBranches();
+        selectBranch(name); 
+        closeAddBranchModal();
+    }
+
+    function selectBranch(branchName) {
+        document.getElementById("branch-screen").classList.add("hidden");
+        document.getElementById("main-system").classList.remove("hidden");
+        document.getElementById("active-branch-display").innerText = "Branch: " + branchName;
+    }
+
+    function toggleMenu() {
+        document.getElementById("sidebar").classList.toggle("open");
+    }
+
+    function navigateTo(sectionId) {
+        const sections = document.querySelectorAll('section');
+        sections.forEach(sec => sec.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        toggleMenu();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+/* General Reset */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: #f4f7f6;
+    overflow-x: hidden;
+}
+
+.hidden { display: none !important; }
+
+/* Overlay & Branch Card */
+.overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #2d3e50;
+    display: flex; justify-content: center; align-items: center;
+    z-index: 2000;
+}
+
+.branch-card {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.branch-options button {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-branch-trigger {
+    background: transparent;
+    color: #4CAF50;
+    border: 2px dashed #4CAF50;
+    padding: 10px;
+    width: 100%;
+    margin-top: 15px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+/* Modal Popup */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 3000;
+}
+
+.modal-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 320px;
+    text-align: center;
+}
+
+.modal-card input {
+    width: 100%;
+    padding: 12px;
+    margin: 20px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.cancel-btn { background: #ff5252; color: white; border: none; padding: 12px; flex: 1; border-radius: 6px; cursor: pointer; }
+.done-btn { background: #4CAF50; color: white; border: none; padding: 12px; flex: 1; border-radius: 6px; cursor: pointer; }
+
+/* Main System UI */
+header {
+    background-color: #2d3e50;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.menu-toggle {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+/* Sidebar Navigation */
+.sidebar {
+    height: 100%;
+    width: 250px;
+    position: fixed;
+    top: 0; left: -250px;
+    background-color: #2d3e50;
+    transition: 0.3s;
+    z-index: 1000;
+    padding-top: 60px;
+}
+
+.sidebar.open { left: 0; }
+
+.close-btn {
+    position: absolute;
+    top: 10px; right: 15px;
+    background: none; border: none;
+    color: white; font-size: 30px; cursor: pointer;
+}
+
+nav button {
+    display: block;
+    width: 85%;
+    margin: 10px auto;
+    padding: 15px;
+    background: none;
+    border: 1px solid #455a64;
+    color: white;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+/* Container for branch button and delete icon */
+.branch-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.branch-item button {
+    flex-grow: 1;
+    margin: 0 !important; /* Override previous margin */
+}
+
+/* The Delete (X) Button */
+.delete-icon {
+    background-color: #ff5252;
+    color: white;
+    width: 30px;
+    height: 45px; /* Match the height of your branch buttons */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 0 8px 8px 0;
+    font-weight: bold;
+    font-size: 20px;
+    transition: 0.2s;
+}
+
+.delete-icon:hover {
+    background-color: #d32f2f;
+}
+
+/* Adjust the branch button to fit the delete icon */
+.branch-item button {
+    border-radius: 8px 0 0 8px !important;
+}
+
+/* Default Main Branch doesn't have a delete icon, so give it full corners */
+.branch-item:first-child button {
+    border-radius: 8px !important;
+}
+
+nav button:hover { background-color: #4CAF50; }
+
+.content { padding: 30px; }
+section { display: none; }
+section.active { display: block; }
