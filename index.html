@@ -183,54 +183,53 @@
 
 async function fetchMenuData() {
     const select = document.getElementById("drink-select");
-    select.innerHTML = "<option>Connecting to Matcha Menu...</option>";
+    select.innerHTML = "<option>Connecting to MENU tab...</option>";
 
-    // Using your specific Sheet ID
     const sheetId = '1vQtmBuCJFOoDbfpkOew3oeYV6MpMtD6KwNlVbOJMIHO6fdADgfsn0h0vU3Ed5t_4LK5Ztl0USEVjD_H';
-    // This format is the most stable for GitHub Pages
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
+    // We target the 'MENU' sheet specifically here
+    const proxyUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=MENU`;
 
     try {
-        const response = await fetch(csvUrl);
-        if (!response.ok) throw new Error('Private Sheet or Network Error');
+        const response = await fetch(proxyUrl);
+        const text = await response.text();
         
-        const data = await response.text();
-        const rows = data.split(/\r?\n/).filter(row => row.trim() !== "");
+        // Remove quotes and split rows
+        const rows = text.split(/\r?\n/).map(r => r.replace(/"/g, ''));
         
+        if (rows.length < 2) throw new Error("Menu tab appears empty.");
+
         select.innerHTML = ""; 
 
         rows.forEach((row, index) => {
-            if (index === 0) return; // Skip Header Row
+            if (index === 0) return; // Skip Header
 
-            // Handles commas within quotes correctly
-            const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            const cols = row.split(",");
             
-            // Your sheet has: ID(0), Name(1), Category(2), Price(3)
-            // We need at least 4 columns to reach the Price in Column D
+            // Your MENU tab layout: 
+            // cols[1] = Item Name (Iced Matcha Latte)
+            // cols[3] = Price (125)
             if (cols.length >= 4) {
-                const name = cols[1].replace(/"/g, "").trim();
-                
-                // Aggressive cleaning for Column D (Price)
-                let priceRaw = cols[3].replace(/"/g, "").replace(/[^\d.-]/g, "").trim();
-                const price = parseFloat(priceRaw);
-                
-                if (name !== "" && !isNaN(price)) {
+                const name = cols[1].trim();
+                const priceValue = cols[3].trim();
+                const price = parseFloat(priceValue);
+
+                if (name && !isNaN(price)) {
                     let opt = document.createElement("option");
                     opt.value = price;
-                    opt.text = `${name} (₱${price.toFixed(2)})`;
+                    opt.text = `${name} (₱${price})`;
                     opt.dataset.name = name;
                     select.appendChild(opt);
                 }
             }
         });
 
-        if(select.options.length === 0) {
-            select.innerHTML = "<option>Error: Price not found in Column D</option>";
+        if (select.options.length === 0) {
+            select.innerHTML = "<option>No items found. Is Price in Column D?</option>";
         }
 
     } catch (e) {
-        console.error("Fetch failed:", e);
-        select.innerHTML = "<option>Link Error: Is Sheet Shared to 'Anyone'?</option>";
+        console.error(e);
+        select.innerHTML = `<option>Error: ${e.message}</option>`;
     }
 }
     // --- POS LOGIC ---
