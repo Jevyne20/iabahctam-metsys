@@ -45,7 +45,8 @@
 
         .order-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .cart-box { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; max-height: 200px; overflow-y: auto; }
-        .cart-item { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; padding: 4px 0; }
+        .cart-item { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; padding: 8px 10px; background: #f9f9f9; border-radius: 5px; transition: 0.2s; }
+        .cart-item:hover { background: #feebeb; color: #ff5252; }
 
         .pending-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
 
@@ -63,7 +64,7 @@
         .btn-check { background: #4CAF50; }
         .btn-x { background: #ff5252; }
 
-        .done-btn { background: #4CAF50; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        .done-btn { background: #4CAF50; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
         .add-item-btn { background: #2d3e50; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 10px; }
         
         select, input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
@@ -73,6 +74,12 @@
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #2d3e50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Adjusting Time column for Date | Time display */
+        th:nth-child(1), td:nth-child(1) { width: 160px; font-family: monospace; }
+
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:2100; }
+        .modal-card { background:white; padding:30px; border-radius:12px; width:90%; max-width:350px; }
     </style>
 </head>
 <body>
@@ -80,7 +87,7 @@
     <div id="branch-screen" class="overlay">
         <div class="branch-card">
             <h1 style="color: #2d3e50; margin-top: 0;">MatchaBai</h1>
-            <div id="branch-list" class="branch-options"></div>
+            <div id="branch-list"></div>
             <button onclick="openAddBranchModal()" style="background:none; color:#4CAF50; border:2px dashed #4CAF50; width:100%; padding:12px; border-radius:8px; cursor:pointer; margin-top:10px;">+ Add New Branch</button>
         </div>
     </div>
@@ -143,7 +150,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Time</th>
+                            <th>Date | Time</th>
                             <th>Details</th>
                             <th>Amount</th>
                         </tr>
@@ -214,7 +221,7 @@
             });
 
             if (select.options.length === 0) {
-                select.innerHTML = "<option>No items found in Sheet</option>";
+                select.innerHTML = "<option>No items found</option>";
             }
 
         } catch (e) {
@@ -223,7 +230,6 @@
         }
     }
 
-    // --- POS LOGIC ---
     function addToCart() {
         const select = document.getElementById("drink-select");
         if(!select.value || select.value.includes("Loading")) return;
@@ -242,7 +248,7 @@
         cartDiv.innerHTML = currentCart.map((item, index) => {
             total += item.subtotal;
             return `
-                <div class="cart-item" onclick="removeFromCart(${index})" style="cursor:pointer;" title="Click to remove">
+                <div class="cart-item" onclick="removeFromCart(${index})" title="Click to remove">
                     <span>${item.qty}x ${item.name}</span>
                     <span>₱${item.subtotal.toLocaleString()}</span>
                 </div>`;
@@ -257,13 +263,20 @@
 
     function confirmOrder() {
         if (currentCart.length === 0) return;
+        
         const orderId = Date.now();
         const total = currentCart.reduce((sum, i) => sum + i.subtotal, 0);
+        
         pendingOrders.push({ id: orderId, items: [...currentCart], total });
+        
+        // --- AUTO-RESET LOGIC ---
         currentCart = [];
-        document.getElementById("order-qty").value = 1; // Reset qty
-        renderCart();
+        document.getElementById("order-qty").value = 1; 
+        renderCart(); // Resets total and cart list visually
         renderPending();
+        
+        // Reset dropdown to first item
+        document.getElementById("drink-select").selectedIndex = 0;
     }
 
     function renderPending() {
@@ -289,16 +302,23 @@
         if (orderIndex === -1) return;
         
         const order = pendingOrders[orderIndex];
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // --- UPDATED DATE & TIME ---
+        const now = new Date();
+        const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const fullDateTime = `${dateStr} | ${timeStr}`;
+        
         const itemList = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
         
         const row = `<tr>
-            <td style="color:#666;">${time}</td>
+            <td style="color:#666; font-size:12px;">${fullDateTime}</td>
             <td>${itemList}</td>
             <td style="color:#4CAF50; font-weight:bold;">₱${order.total.toLocaleString()}</td>
         </tr>`;
         
         document.getElementById("sales-history-body").insertAdjacentHTML('afterbegin', row);
+        
         sessionTotal += order.total;
         document.getElementById("session-total").innerText = `₱${sessionTotal.toLocaleString()}`;
         
@@ -320,7 +340,7 @@
     }
 
     function clearSalesLog() {
-        if(confirm("Permanently clear session log?")) {
+        if(confirm("Clear log?")) {
             document.getElementById("sales-history-body").innerHTML = "";
             sessionTotal = 0;
             document.getElementById("session-total").innerText = "₱0.00";
@@ -352,17 +372,13 @@
         document.getElementById("active-branch-display").innerText = name;
     }
 
-    function openAddBranchModal() { 
-        document.getElementById("add-branch-modal").classList.remove("hidden"); 
-        document.getElementById("new-branch-input").focus();
-    }
+    function openAddBranchModal() { document.getElementById("add-branch-modal").classList.remove("hidden"); }
     function closeAddBranchModal() { document.getElementById("add-branch-modal").classList.add("hidden"); }
 
     function saveNewBranch() {
         const input = document.getElementById("new-branch-input");
         const name = input.value.trim();
         if (!name) return;
-        
         let b = JSON.parse(localStorage.getItem("matchaBranches")) || [];
         b.push(name);
         localStorage.setItem("matchaBranches", JSON.stringify(b));
@@ -372,7 +388,7 @@
     }
 
     function deleteBranch(i) {
-        if (confirm("Remove this branch from your local list?")) {
+        if (confirm("Delete branch?")) {
             let b = JSON.parse(localStorage.getItem("matchaBranches"));
             b.splice(i, 1);
             localStorage.setItem("matchaBranches", JSON.stringify(b));
@@ -381,11 +397,10 @@
     }
 
     function toggleMenu() { document.getElementById("sidebar").classList.toggle("open"); }
-    
     function navigateTo(id) {
         document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if (window.innerWidth < 800) toggleMenu(); 
+        if (window.innerWidth < 800) toggleMenu();
     }
 </script>
 </body>
