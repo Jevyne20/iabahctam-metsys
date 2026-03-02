@@ -44,9 +44,16 @@
         @media (max-width: 800px) { .pos-layout { grid-template-columns: 1fr; } }
 
         .order-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .cart-box { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; max-height: 200px; overflow-y: auto; }
-        .cart-item { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; padding: 8px 10px; background: #f9f9f9; border-radius: 5px; transition: 0.2s; }
+        .cart-box { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; max-height: 250px; overflow-y: auto; }
+        
+        /* Interactive Cart Items */
+        .cart-item { 
+            display: flex; justify-content: space-between; font-size: 14px; 
+            margin-bottom: 5px; padding: 8px 12px; background: #f8f9fa; 
+            border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
         .cart-item:hover { background: #feebeb; color: #ff5252; }
+        .cart-item:hover::after { content: ' ✖'; font-weight: bold; }
 
         .pending-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
 
@@ -68,18 +75,18 @@
         .add-item-btn { background: #2d3e50; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 10px; }
         
         select, input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-        .total-display { font-size: 22px; font-weight: bold; margin: 15px 0; text-align: center; color: #2d3e50; }
+        .total-display { font-size: 24px; font-weight: bold; margin: 15px 0; text-align: center; color: #2d3e50; border-top: 2px solid #f4f7f6; padding-top: 10px; }
 
         .sales-summary-card { background: #2d3e50; color: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #2d3e50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* Adjusting Time column for Date | Time display */
-        th:nth-child(1), td:nth-child(1) { width: 160px; font-family: monospace; }
+        /* Optimized Date/Time Column */
+        th:nth-child(1), td:nth-child(1) { width: 180px; color: #666; font-size: 13px; font-family: 'Courier New', Courier, monospace; }
 
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:2100; }
-        .modal-card { background:white; padding:30px; border-radius:12px; width:90%; max-width:350px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2100; }
+        .modal-card { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 350px; }
     </style>
 </head>
 <body>
@@ -142,7 +149,7 @@
             <section id="sales">
                 <div class="sales-summary-card">
                     <div>
-                        <span style="font-size: 12px; opacity: 0.8; letter-spacing: 1px;">TOTAL SALES (THIS SESSION)</span>
+                        <span style="font-size: 12px; opacity: 0.8; letter-spacing: 1px;">SESSION REVENUE</span>
                         <div id="session-total" style="font-size: 32px; font-weight: bold;">₱0.00</div>
                     </div>
                     <button onclick="clearSalesLog()" style="background:#ff5252; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">Clear Records</button>
@@ -151,8 +158,8 @@
                     <thead>
                         <tr>
                             <th>Date | Time</th>
-                            <th>Details</th>
-                            <th>Amount</th>
+                            <th>Order Details</th>
+                            <th>Total</th>
                         </tr>
                     </thead>
                     <tbody id="sales-history-body"></tbody>
@@ -187,29 +194,23 @@
 
     async function fetchMenuData() {
         const select = document.getElementById("drink-select");
-        select.innerHTML = "<option>Loading Matcha Menu...</option>";
-
+        select.innerHTML = "<option>Loading Menu...</option>";
         const sheetId = '1vLw8T4-9ODhbTDqlSN6OUDStpbqGX_uDB6Hq8xz8Ew8';
         const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
 
         try {
             const response = await fetch(`${exportUrl}&t=${new Date().getTime()}`);
-            if (!response.ok) throw new Error('Access Denied');
-            
             const data = await response.text();
             const rows = data.split(/\r?\n/).filter(row => row.trim() !== "");
             
             select.innerHTML = ""; 
-
             rows.forEach((row, index) => {
                 if (index === 0) return; 
                 const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                
                 if (cols.length >= 4) {
                     const name = cols[1].replace(/"/g, "").trim();
                     let priceRaw = cols[3].replace(/"/g, "").replace(/[^\d.-]/g, "").trim();
                     const price = parseFloat(priceRaw);
-                    
                     if (name !== "" && !isNaN(price)) {
                         let opt = document.createElement("option");
                         opt.value = price;
@@ -219,14 +220,8 @@
                     }
                 }
             });
-
-            if (select.options.length === 0) {
-                select.innerHTML = "<option>No items found</option>";
-            }
-
         } catch (e) {
-            console.error("Fetch Error:", e);
-            select.innerHTML = "<option>LINK ERROR: Check Share Settings</option>";
+            select.innerHTML = "<option>Error loading menu</option>";
         }
     }
 
@@ -247,11 +242,10 @@
         let total = 0;
         cartDiv.innerHTML = currentCart.map((item, index) => {
             total += item.subtotal;
-            return `
-                <div class="cart-item" onclick="removeFromCart(${index})" title="Click to remove">
-                    <span>${item.qty}x ${item.name}</span>
-                    <span>₱${item.subtotal.toLocaleString()}</span>
-                </div>`;
+            return `<div class="cart-item" onclick="removeFromCart(${index})">
+                        <span>${item.qty}x ${item.name}</span>
+                        <span>₱${item.subtotal.toLocaleString()}</span>
+                    </div>`;
         }).join('');
         document.getElementById("total-price").innerText = `Total: ₱${total.toLocaleString()}`;
     }
@@ -269,14 +263,12 @@
         
         pendingOrders.push({ id: orderId, items: [...currentCart], total });
         
-        // --- AUTO-RESET LOGIC ---
+        // --- AUTO-RESET FLOW ---
         currentCart = [];
         document.getElementById("order-qty").value = 1; 
-        renderCart(); // Resets total and cart list visually
-        renderPending();
-        
-        // Reset dropdown to first item
         document.getElementById("drink-select").selectedIndex = 0;
+        renderCart(); 
+        renderPending();
     }
 
     function renderPending() {
@@ -303,22 +295,21 @@
         
         const order = pendingOrders[orderIndex];
         
-        // --- UPDATED DATE & TIME ---
+        // --- DATE AND TIME FORMAT ---
         const now = new Date();
         const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const fullDateTime = `${dateStr} | ${timeStr}`;
+        const stamp = `${dateStr} | ${timeStr}`;
         
         const itemList = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
         
         const row = `<tr>
-            <td style="color:#666; font-size:12px;">${fullDateTime}</td>
+            <td>${stamp}</td>
             <td>${itemList}</td>
             <td style="color:#4CAF50; font-weight:bold;">₱${order.total.toLocaleString()}</td>
         </tr>`;
         
         document.getElementById("sales-history-body").insertAdjacentHTML('afterbegin', row);
-        
         sessionTotal += order.total;
         document.getElementById("session-total").innerText = `₱${sessionTotal.toLocaleString()}`;
         
@@ -340,23 +331,17 @@
     }
 
     function clearSalesLog() {
-        if(confirm("Clear log?")) {
+        if(confirm("Clear local sales history?")) {
             document.getElementById("sales-history-body").innerHTML = "";
             sessionTotal = 0;
             document.getElementById("session-total").innerText = "₱0.00";
         }
     }
 
-    // --- BRANCH LOGIC ---
     function renderBranches() {
         const list = document.getElementById("branch-list");
-        let branches = [];
-        try {
-            branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
-        } catch(e) { branches = []; }
-
+        let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
         let html = `<div style="display:flex; margin-bottom:10px;"><button onclick="selectBranch('Main Branch')" style="flex:1; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">🏠 Main Branch</button></div>`;
-        
         branches.forEach((b, i) => {
             html += `<div style="display:flex; margin-bottom:10px;">
                 <button onclick="selectBranch('${b}')" style="flex:1; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px 0 0 8px; font-weight:bold; cursor:pointer;">📍 ${b}</button>
