@@ -46,14 +46,12 @@
         .order-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .cart-box { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; max-height: 250px; overflow-y: auto; }
         
-        /* Interactive Cart Items */
         .cart-item { 
             display: flex; justify-content: space-between; font-size: 14px; 
             margin-bottom: 5px; padding: 8px 12px; background: #f8f9fa; 
             border-radius: 6px; cursor: pointer; transition: 0.2s;
         }
         .cart-item:hover { background: #feebeb; color: #ff5252; }
-        .cart-item:hover::after { content: ' ✖'; font-weight: bold; }
 
         .pending-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
 
@@ -82,8 +80,8 @@
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #2d3e50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* Optimized Date/Time Column */
-        th:nth-child(1), td:nth-child(1) { width: 180px; color: #666; font-size: 13px; font-family: 'Courier New', Courier, monospace; }
+        /* Adjusted for simple Order # | Date */
+        th:nth-child(1), td:nth-child(1) { width: 140px; font-weight: bold; color: #2d3e50; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2100; }
         .modal-card { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 350px; }
@@ -157,9 +155,9 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Date | Time</th>
-                            <th>Order Details</th>
-                            <th>Total</th>
+                            <th>Order # | Date</th>
+                            <th>Items</th>
+                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody id="sales-history-body"></tbody>
@@ -186,6 +184,8 @@
     let currentCart = [];
     let pendingOrders = [];
     let sessionTotal = 0;
+    // NEW: The Counter
+    let orderCounter = 1;
 
     window.onload = function() {
         renderBranches();
@@ -228,11 +228,9 @@
     function addToCart() {
         const select = document.getElementById("drink-select");
         if(!select.value || select.value.includes("Loading")) return;
-        
         const name = select.options[select.selectedIndex].dataset.name;
         const price = parseFloat(select.value);
         const qty = parseInt(document.getElementById("order-qty").value) || 1;
-        
         currentCart.push({ name, price, qty, subtotal: price * qty });
         renderCart();
     }
@@ -258,12 +256,16 @@
     function confirmOrder() {
         if (currentCart.length === 0) return;
         
-        const orderId = Date.now();
+        // Use the simple counting number
+        const currentOrderNum = orderCounter;
         const total = currentCart.reduce((sum, i) => sum + i.subtotal, 0);
         
-        pendingOrders.push({ id: orderId, items: [...currentCart], total });
+        pendingOrders.push({ id: currentOrderNum, items: [...currentCart], total });
         
-        // --- AUTO-RESET FLOW ---
+        // Increment the counter for the NEXT person
+        orderCounter++;
+
+        // RESET UI
         currentCart = [];
         document.getElementById("order-qty").value = 1; 
         document.getElementById("drink-select").selectedIndex = 0;
@@ -275,7 +277,7 @@
         const container = document.getElementById("pending-orders-container");
         container.innerHTML = pendingOrders.map(order => `
             <div class="order-card" id="card-${order.id}" onclick="toggleCard(${order.id})">
-                <h4>Order #${order.id.toString().slice(-4)}</h4>
+                <h4>Order #${order.id}</h4>
                 <div style="font-size:12px; color:#666;">Total: ₱${order.total.toLocaleString()}</div>
                 <div class="details">
                     ${order.items.map(i => `<div>• ${i.qty}x ${i.name}</div>`).join('')}
@@ -292,19 +294,17 @@
         event.stopPropagation();
         const orderIndex = pendingOrders.findIndex(o => o.id === id);
         if (orderIndex === -1) return;
-        
         const order = pendingOrders[orderIndex];
         
-        // --- DATE AND TIME FORMAT ---
         const now = new Date();
         const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const stamp = `${dateStr} | ${timeStr}`;
+        
+        // Column: #1 | Mar 2
+        const logDisplay = `#${order.id} | ${dateStr}`;
         
         const itemList = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
-        
         const row = `<tr>
-            <td>${stamp}</td>
+            <td>${logDisplay}</td>
             <td>${itemList}</td>
             <td style="color:#4CAF50; font-weight:bold;">₱${order.total.toLocaleString()}</td>
         </tr>`;
@@ -312,14 +312,13 @@
         document.getElementById("sales-history-body").insertAdjacentHTML('afterbegin', row);
         sessionTotal += order.total;
         document.getElementById("session-total").innerText = `₱${sessionTotal.toLocaleString()}`;
-        
         pendingOrders.splice(orderIndex, 1);
         renderPending();
     }
 
     function removeOrder(event, id) {
         event.stopPropagation();
-        if(confirm("Cancel this order?")) {
+        if(confirm("Cancel order?")) {
             pendingOrders = pendingOrders.filter(o => o.id !== id);
             renderPending();
         }
@@ -331,9 +330,10 @@
     }
 
     function clearSalesLog() {
-        if(confirm("Clear local sales history?")) {
+        if(confirm("Clear log and RESET counter?")) {
             document.getElementById("sales-history-body").innerHTML = "";
             sessionTotal = 0;
+            orderCounter = 1; // Reset counting back to 1
             document.getElementById("session-total").innerText = "₱0.00";
         }
     }
