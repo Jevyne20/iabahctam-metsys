@@ -183,36 +183,39 @@
 
 async function fetchMenuData() {
     const select = document.getElementById("drink-select");
-    select.innerHTML = "<option>Loading Matcha Menu...</option>";
+    select.innerHTML = "<option>Connecting to Matcha Menu...</option>";
 
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQtmBuCJFOoDbfpkOew3oeYV6MpMtD6KwNlVbOJMIHO6fdADgfsn0h0vU3Ed5t_4LK5Ztl0USEVjD_H/pub?output=csv';
+    // Updated to use the correct export format for your specific sheet
+    const sheetId = '1vQtmBuCJFOoDbfpkOew3oeYV6MpMtD6KwNlVbOJMIHO6fdADgfsn0h0vU3Ed5t_4LK5Ztl0USEVjD_H';
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
 
     try {
-        const response = await fetch(csvUrl + '&cache-control=no-cache');
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new Error('Network error or Private Sheet');
+        
         const data = await response.text();
         const rows = data.split(/\r?\n/).filter(row => row.trim() !== "");
         
         select.innerHTML = ""; 
 
         rows.forEach((row, index) => {
-            if (index === 0) return; // Skip Header
+            if (index === 0) return; // Skip "Item ID, Item Name, etc."
 
-            // Split by comma
+            // Handles commas within quotes correctly
             const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             
-            // We need at least 4 columns (A, B, C, D)
+            // Per your image: Name is Col B (1), Price is Col D (3)
             if (cols.length >= 4) {
-                // Column B (Index 1) is Item Name
                 const name = cols[1].replace(/"/g, "").trim();
                 
-                // Column D (Index 3) is Price
+                // Extra cleaning for the price in Column D
                 let priceRaw = cols[3].replace(/"/g, "").replace(/[^\d.-]/g, "").trim();
                 const price = parseFloat(priceRaw);
                 
                 if (name !== "" && !isNaN(price)) {
                     let opt = document.createElement("option");
                     opt.value = price;
-                    opt.text = `${name} (₱${price.toLocaleString()})`;
+                    opt.text = `${name} (₱${price.toFixed(2)})`;
                     opt.dataset.name = name;
                     select.appendChild(opt);
                 }
@@ -220,11 +223,12 @@ async function fetchMenuData() {
         });
 
         if(select.options.length === 0) {
-            select.innerHTML = "<option>Check Columns B and D</option>";
+            select.innerHTML = "<option>Error: Check Column B and D data</option>";
         }
 
     } catch (e) {
-        select.innerHTML = "<option>Link Error</option>";
+        console.error("Fetch failed:", e);
+        select.innerHTML = "<option>Link Error: Please check Share settings</option>";
     }
 }
     // --- POS LOGIC ---
