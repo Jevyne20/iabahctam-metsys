@@ -289,29 +289,52 @@
         `).join('');
     }
 
-    function finalizeOrder(event, id) {
-        event.stopPropagation();
-        const orderIndex = pendingOrders.findIndex(o => o.id === id);
-        if (orderIndex === -1) return;
-        const order = pendingOrders[orderIndex];
-        
-        const now = new Date();
-        const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        const logDisplay = `#${order.id} | ${dateStr}`;
-        
-        const itemList = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
-        const row = `<tr>
-            <td>${logDisplay}</td>
-            <td>${itemList}</td>
-            <td style="color:#4CAF50; font-weight:bold;">₱${order.total.toLocaleString()}</td>
-        </tr>`;
-        
-        document.getElementById("sales-history-body").insertAdjacentHTML('afterbegin', row);
-        sessionTotal += order.total;
-        document.getElementById("session-total").innerText = `₱${sessionTotal.toLocaleString()}`;
-        pendingOrders.splice(orderIndex, 1);
-        renderPending();
+async function finalizeOrder(event, id) {
+    event.stopPropagation();
+    const orderIndex = pendingOrders.findIndex(o => o.id === id);
+    if (orderIndex === -1) return;
+    const order = pendingOrders[orderIndex];
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const itemList = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
+    const branchName = document.getElementById("active-branch-display").innerText;
+
+    // 1. Prepare data for Google Sheets
+    const payload = {
+        orderNum: order.id,
+        date: dateStr,
+        items: itemList,
+        total: order.total,
+        branch: branchName
+    };
+
+    // 2. SEND TO GOOGLE SHEETS (REPLACE URL WITH YOURS)
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxfGrIfSdNv2NQeK-iMJpBva_3jTTjgiG7TxN-jxJSbKKkCHfXZA3Y6eJdiLYh9X2z6FA/exec";
+    
+    try {
+        fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+    } catch (e) {
+        console.error("Sync failed, but saving locally...");
     }
+
+    // 3. Update Local UI (as before)
+    const row = `<tr>
+        <td>#${order.id} | ${dateStr}</td>
+        <td>${itemList}</td>
+        <td style="color:#4CAF50; font-weight:bold;">₱${order.total.toLocaleString()}</td>
+    </tr>`;
+    
+    document.getElementById("sales-history-body").insertAdjacentHTML('afterbegin', row);
+    sessionTotal += order.total;
+    document.getElementById("session-total").innerText = `₱${sessionTotal.toLocaleString()}`;
+    
+    pendingOrders.splice(orderIndex, 1);
+    renderPending();
+}
 
     function removeOrder(event, id) {
         event.stopPropagation();
