@@ -87,6 +87,12 @@
         
         .delete-sale-btn { background: #ff5252; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .upload-btn { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* Attendance Styling */
+        .attendance-card { background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; }
+        .attendance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .btn-in { background: #4CAF50; color: white; padding: 20px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-out { background: #f44336; color: white; padding: 20px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -169,7 +175,20 @@
                 </table>
             </section>
 
-            <section id="attendance"><h2>Attendance</h2><p>Feature coming soon...</p></section>
+            <section id="attendance">
+                <div class="attendance-card">
+                    <h2 style="color: #2d3e50; margin-bottom: 5px;">Staff Attendance</h2>
+                    <p style="color: #666; font-size: 14px;">Log your shift for <strong id="att-branch-name"></strong></p>
+                    <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
+                    
+                    <div class="attendance-grid">
+                        <button class="btn-in" onclick="logAttendance('TIME IN')">IN</button>
+                        <button class="btn-out" onclick="logAttendance('TIME OUT')">OUT</button>
+                    </div>
+                    <p style="margin-top: 20px; font-size: 12px; color: #999;">Records are synced to the 15-day payroll sheet.</p>
+                </div>
+            </section>
+            
             <section id="expenses"><h2>Expenses</h2><p>Feature coming soon...</p></section>
         </div>
     </div>
@@ -191,6 +210,9 @@
     let currentBranch = "";
     let localSales = [];
     let orderCounter = 1;
+
+    // UPDATE: Use your latest Deployment ID here
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxKgjWz82xgr4M1v5lIK4FPtm34KTlEFXNoBweghwzY4IuNdrlPt_PMdXjH9-r6FLdMbA/exec";
 
     window.onload = function() {
         renderBranches();
@@ -228,18 +250,44 @@
         } catch (e) { console.error(e); }
     }
 
-    // BRANCH LOGIC - ISOLATED SALES
     function selectBranch(name) {
         currentBranch = name;
         document.getElementById("branch-screen").classList.add("hidden");
         document.getElementById("main-system").classList.remove("hidden");
         document.getElementById("active-branch-display").innerText = name;
+        document.getElementById("att-branch-name").innerText = name;
         
-        // Load branch-specific sales log and counter
         localSales = JSON.parse(localStorage.getItem(`matchaSalesLog_${name}`)) || [];
         orderCounter = parseInt(localStorage.getItem(`matchaOrderCounter_${name}`)) || 1;
         
         renderSalesLog();
+    }
+
+    // ATTENDANCE LOGIC
+    async function logAttendance(type) {
+        const name = prompt(`Enter Employee Name for ${type}:`);
+        if (!name) return;
+
+        const now = new Date();
+        const payload = {
+            action: "attendance",
+            employee: name,
+            branch: currentBranch,
+            type: type,
+            date: now.toLocaleDateString(),
+            time: now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0')
+        };
+
+        try {
+            await fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+            alert(`Success! Logged ${type} for ${name} at ${payload.time}`);
+        } catch (e) {
+            alert("Error logging attendance. Check connection.");
+        }
     }
 
     function saveBranchData() {
@@ -332,18 +380,15 @@
         renderPending();
     }
 
-    // SMART SEQUENCING: Uses 'index + 1' to keep numbering continuous even after deletion
     function renderSalesLog() {
         const body = document.getElementById("sales-history-body");
         let sessionTotal = 0;
-        
-        // Reverse for display, but keep track of real index for deletion
         const displaySales = [...localSales].reverse();
         
         body.innerHTML = displaySales.map((sale, revIndex) => {
             sessionTotal += sale.total;
             const actualIndex = localSales.length - 1 - revIndex;
-            const orderSequence = actualIndex + 1; // Real-time Order #
+            const orderSequence = actualIndex + 1;
             const itemString = sale.items.map(i => `${i.qty}x ${i.name}`).join(', ');
             
             return `<tr>
@@ -358,82 +403,62 @@
     }
 
     function deleteSaleEntry(index) {
-        if(confirm("Permanently delete this order? All following orders will be re-sequenced.")) {
+        if(confirm("Permanently delete this order?")) {
             localSales.splice(index, 1);
-            orderCounter = localSales.length + 1; // Sync counter with sequence
+            orderCounter = localSales.length + 1;
             saveBranchData();
             renderSalesLog();
         }
     }
 
-async function uploadDailySummary() {
+    async function uploadDailySummary() {
         if(localSales.length === 0) return alert("No sales data to upload.");
         
-        let totalSales = 0;
-        let totalCups = 0;
+        let totalSalesValue = 0;
+        let cupCount = 0;
         let itemQuantities = {};
         
-        // Formats date as MM/DD/YYYY to match your Sheet screenshot
         const now = new Date();
-        const formattedDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+        const formattedDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
         localSales.forEach(sale => {
-            totalSales += sale.total;
+            totalSalesValue += sale.total;
             sale.items.forEach(item => {
-                totalCups += item.qty;
+                // Ensure totalCups is a Number, not a string or date object
+                cupCount += Number(item.qty);
                 itemQuantities[item.name] = (itemQuantities[item.name] || 0) + item.qty;
             });
         });
-
-        // to ensure the cup count is accurate before sending
-let totalCups = 0;
-localSales.forEach(sale => {
-    sale.items.forEach(item => {
-        // Only count drinks; skip items like "Fries" if you only want a cup count
-        if (!item.name.toLowerCase().includes("fries")) { 
-            totalCups += Number(item.qty); 
-        }
-    });
-});
 
         const summaryItems = Object.entries(itemQuantities)
             .map(([name, qty]) => `${qty}x ${name}`)
             .join(', ');
 
-        // This payload structure is key for the new Apps Script
         const payload = {
+            action: "sales",
             date: formattedDate,
-            totalCups: totalCups,
+            totalCups: cupCount, // Sent as a clean number
             itemSummary: summaryItems,
-            totalSales: totalSales,
+            totalSales: totalSalesValue,
             branch: currentBranch
         };
 
-        // Ensure this URL is from your LATEST "New Deployment"
-        const scriptURL = "https://script.google.com/macros/s/AKfycbxKgjWz82xgr4M1v5lIK4FPtm34KTlEFXNoBweghwzY4IuNdrlPt_PMdXjH9-r6FLdMbA/exec";
-
-        if(confirm(`Upload Summary for ${currentBranch}?\nCups Sold: ${totalCups}\nTotal: ₱${totalSales.toLocaleString()}`)) {
+        if(confirm(`Upload Summary for ${currentBranch}?\nCups Sold: ${cupCount}\nTotal: ₱${totalSalesValue.toLocaleString()}`)) {
             try {
-                // Using 'cors' mode now to handle the JSON transfer properly
                 await fetch(scriptURL, {
                     method: 'POST',
-                    mode: 'no-cors', 
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'no-cors',
                     body: JSON.stringify(payload)
                 });
                 
-                alert("Upload Successful! Your sheet has been updated.");
-                
-                // Clear local session after successful upload
+                alert("Upload Successful!");
                 localSales = [];
                 orderCounter = 1;
                 saveBranchData();
                 renderSalesLog();
                 
             } catch (e) {
-                console.error("Upload Error:", e);
-                alert("Upload failed. Please check your internet connection.");
+                alert("Upload failed.");
             }
         }
     }
@@ -480,7 +505,7 @@ localSales.forEach(sale => {
     }
 
     function deleteBranch(i) {
-        if (confirm("Delete branch and its local sales history?")) {
+        if (confirm("Delete branch?")) {
             let b = JSON.parse(localStorage.getItem("matchaBranches"));
             const name = b[i];
             localStorage.removeItem(`matchaSalesLog_${name}`);
