@@ -39,7 +39,6 @@
         section { display: none; }
         section.active { display: block; }
 
-        /* POS Layout */
         .pos-layout { 
             display: grid; 
             grid-template-columns: 350px 1fr 300px; 
@@ -85,7 +84,6 @@
         .total-display { font-size: 24px; font-weight: bold; margin: 15px 0; text-align: center; color: #2d3e50; border-top: 2px solid #f4f7f6; padding-top: 10px; }
         .done-btn { background: #4CAF50; color: white; border: none; padding: 18px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 18px; }
 
-        /* Updated Sales Log Dashboard Styling */
         .sales-summary-card { 
             background: #2d3e50; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; 
             display: flex; gap: 15px; flex-wrap: wrap; align-items: center;
@@ -220,6 +218,7 @@
     let activeCartIndex = null;
 
     const SHEET_ID = '1vLw8T4-9ODhbTDqlSN6OUDStpbqGX_uDB6Hq8xz8Ew8';
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxtO2faPHDiYPn3VsxFDdWEfTIUzfBm0XRnvZBeLmgyLT2lGONW41CEkKDovQKYLeSUTQ/exec";
 
     window.onload = function() { renderBranches(); fetchMenuData(); fetchAddonData(); };
 
@@ -355,6 +354,53 @@
         document.getElementById("total-gcash").innerText = `₱${gcash.toLocaleString()}`;
     }
 
+    async function uploadDailySummary() {
+        if (localSales.length === 0) return alert("No sales data to upload!");
+        
+        let totalRevenue = 0, totalCups = 0, oatsideCount = 0, cashCount = 0, gcashCount = 0, itemsList = [];
+
+        localSales.forEach(sale => {
+            totalRevenue += sale.total;
+            if (sale.method === 'CASH') cashCount++;
+            else if (sale.method === 'GCASH') gcashCount++;
+
+            sale.items.forEach(item => {
+                const name = item.name.toUpperCase();
+                if (!name.includes("FRIES")) totalCups += item.qty;
+                if (name.includes("OATSIDE")) oatsideCount += item.qty;
+                itemsList.push(`${item.qty}x ${item.name}`);
+            });
+        });
+
+        const summaryPayload = {
+            date: new Date().toLocaleDateString(),
+            revenue: totalRevenue,
+            cups: totalCups,
+            oatside: oatsideCount,
+            cashCount: cashCount,
+            gcashCount: gcashCount,
+            branch: currentBranch || "Main Branch",
+            itemsSummary: itemsList.join(' | ')
+        };
+
+        try {
+            await fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors", 
+                body: JSON.stringify(summaryPayload)
+            });
+            alert("✅ Sales Log successfully synced to Excel!");
+            if(confirm("Would you like to clear the local session log?")) {
+                localSales = [];
+                saveBranchData();
+                renderSalesLog();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("❌ Error: Could not reach the spreadsheet.");
+        }
+    }
+
     function selectBranch(name) {
         currentBranch = name;
         document.getElementById("branch-screen").classList.add("hidden");
@@ -388,6 +434,17 @@
         let html = `<button onclick="selectBranch('Main Branch')" style="width:100%; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">🏠 Main Branch</button>`;
         branches.forEach((b, i) => { html += `<div style="display:flex; margin-bottom:10px;"><button onclick="selectBranch('${b}')" style="flex:1; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px 0 0 8px;">📍 ${b}</button><button onclick="deleteBranch(${i})" style="background:#ff5252; color:white; border:none; width:45px; border-radius:0 8px 8px 0;">×</button></div>`; });
         list.innerHTML = html;
+    }
+
+    function deleteBranch(i) {
+        if(confirm("Delete branch and its data?")) {
+            let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
+            localStorage.removeItem(`matchaSalesLog_${branches[i]}`);
+            localStorage.removeItem(`matchaOrderCounter_${branches[i]}`);
+            branches.splice(i, 1);
+            localStorage.setItem("matchaBranches", JSON.stringify(branches));
+            renderBranches();
+        }
     }
 
     function openAddBranchModal() {
