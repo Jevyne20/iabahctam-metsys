@@ -268,6 +268,11 @@
         let total = 0;
         cartDiv.innerHTML = currentCart.map((item, index) => {
             total += item.subtotal;
+            
+            // Logic: Hide the add-on button if the item name contains "FRIES"
+            const isFries = item.name.toUpperCase().includes("Fries".toUpperCase());
+            const addonBtn = isFries ? '' : `<button class="btn-add-on" onclick="openAddonModal(${index})">+ Add</button>`;
+
             return `
                 <div class="cart-item">
                     <div class="cart-item-info">
@@ -275,7 +280,7 @@
                         <span>₱${item.subtotal.toLocaleString()}</span>
                     </div>
                     <div class="cart-item-btns">
-                        <button class="btn-add-on" onclick="openAddonModal(${index})">+ Add</button>
+                        ${addonBtn}
                         <button class="btn-item-del" onclick="removeFromCart(${index})">X</button>
                     </div>
                 </div>`;
