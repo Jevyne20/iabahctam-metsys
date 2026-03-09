@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matcha POS | Full System</title>
+    <title>MatchaBai POS | Tablet Edition</title>
     <link rel="stylesheet" href="style.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7f6; overflow-x: hidden; }
@@ -171,16 +171,12 @@
 
             <section id="attendance">
                 <h2>Attendance</h2>
-                <div class="order-container" style="max-width: 600px;">
-                    <p>Track staff check-ins here.</p>
-                </div>
+                <div class="order-container" style="max-width: 600px;"><p>Track staff check-ins here.</p></div>
             </section>
 
             <section id="expenses">
                 <h2>Expenses</h2>
-                <div class="order-container" style="max-width: 600px;">
-                    <p>Log daily operational costs here.</p>
-                </div>
+                <div class="order-container" style="max-width: 600px;"><p>Log daily operational costs here.</p></div>
             </section>
         </div>
     </div>
@@ -282,10 +278,11 @@
 
     function renderPending() {
         const container = document.getElementById("pending-orders-container");
-        container.innerHTML = pendingOrders.map(order => `
+        if (pendingOrders.length === 0) { container.innerHTML = ""; return; }
+        container.innerHTML = pendingOrders.map((order, index) => `
             <div class="order-card" id="card-${order.id}" onclick="document.getElementById('card-${order.id}').classList.toggle('expanded')">
                 <div style="display:flex; justify-content:space-between;">
-                    <strong>#${order.id}</strong>
+                    <strong>#${index + 1}</strong> 
                     <span style="font-size:10px; background:#eee; padding:2px 5px; border-radius:3px;">${order.method}</span>
                 </div>
                 <div style="font-size:13px; margin-top:5px;">₱${order.total.toLocaleString()}</div>
