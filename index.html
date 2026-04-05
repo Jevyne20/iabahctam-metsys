@@ -39,6 +39,7 @@
         section { display: none; }
         section.active { display: block; }
 
+        /* POS LAYOUT */
         .pos-layout { 
             display: grid; 
             grid-template-columns: 350px 1fr 300px; 
@@ -91,25 +92,75 @@
         .total-display { font-size: 24px; font-weight: bold; margin: 15px 0; text-align: center; color: #2d3e50; border-top: 2px solid #f4f7f6; padding-top: 10px; }
         .done-btn { background: #4CAF50; color: white; border: none; padding: 18px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 18px; }
 
-        /* SALES LOG HEADER */
+        /* --- UPDATED CALCULATOR TO FIT SCREEN --- */
+        #calculator { 
+            display: none; 
+            height: calc(100vh - 100px); 
+            justify-content: center; 
+            align-items: center; 
+        }
+        #calculator.active { display: flex; }
+
+        .calculator-container { 
+            width: 100%; 
+            max-width: 500px; /* Wider for tablets/desktops but responsive */
+            margin: auto; 
+            background: #2d3e50; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
+        }
+
+        .calc-display { 
+            background: #1a2633; 
+            color: #4CAF50; 
+            font-size: 48px; 
+            text-align: right; 
+            padding: 30px; 
+            border-radius: 12px; 
+            margin-bottom: 25px; 
+            font-family: 'Courier New', monospace; 
+            overflow: hidden; 
+            word-wrap: break-word;
+            min-height: 60px;
+        }
+
+        .calc-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 15px; 
+        }
+
+        .calc-btn { 
+            padding: 25px 10px; 
+            font-size: 22px; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            background: #455a64; 
+            color: white; 
+            transition: 0.1s; 
+        }
+
+        .calc-btn:active { transform: scale(0.92); background: #546e7a; }
+        .calc-btn.operator { background: #FF9800; color: white; }
+        .calc-btn.utility { background: #ff5252; color: white; }
+        .calc-btn.equals { background: #4CAF50; grid-row: span 2; }
+        .calc-btn.zero { grid-column: span 2; }
+
+        /* --- SALES LOG --- */
         .sales-summary-card { background: #2d3e50; color: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; align-items: center; }
         .stat-box { border-left: 1px solid #455a64; padding-left: 15px; }
         .stat-label { font-size: 11px; color: #cfd8dc; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
         .stat-value { font-size: 18px; font-weight: bold; color: #fff; }
         .stat-value.highlight { color: #4CAF50; }
 
-        /* PRODUCT TALLY (2 ROWS 5 COLUMNS) */
         .product-tally-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        .tally-grid { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            grid-template-rows: repeat(2, auto);    
-            gap: 10px; 
-            margin-top: 15px; 
-        }
+        .tally-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
         .tally-item { background: #f8f9fa; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; border-bottom: 2px solid #e9ecef; }
-        .tally-name { font-size: 13px; font-weight: 500; color: #2d3e50; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .tally-count { font-weight: bold; color: #4CAF50; margin-left: 5px;}
+        .tally-name { font-size: 13px; font-weight: 500; color: #2d3e50; }
+        .tally-count { font-weight: bold; color: #4CAF50; }
 
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
@@ -145,6 +196,7 @@
                 <button onclick="navigateTo('sales')">📊 Sales Log</button>
                 <button onclick="navigateTo('attendance')">👥 Attendance</button>
                 <button onclick="navigateTo('expenses')">💸 Expenses</button>
+                <button onclick="navigateTo('calculator')">🧮 Calculator</button>
                 <hr style="border: 0; border-top: 1px solid #455a64; margin: 20px 15px;">
                 <button onclick="location.reload()" style="color: #ff5252;">🔄 Switch Branch</button>
             </nav>
@@ -187,16 +239,44 @@
                     <div class="stat-box"><div class="stat-label">Gcash</div><div id="total-gcash" class="stat-value">₱0</div></div>
                     <button class="btn-upload" onclick="uploadDailySummary()">📤 Upload</button>
                 </div>
-
                 <div class="product-tally-card">
                     <h4 style="margin:0; color:#2d3e50; border-left:4px solid #4CAF50; padding-left:10px;">Daily Product Tally</h4>
                     <div id="product-tally-list" class="tally-grid"></div>
                 </div>
-
                 <table>
                     <thead><tr><th>Order #</th><th>Items</th><th>Method</th><th>Total</th><th>Action</th></tr></thead>
                     <tbody id="sales-history-body"></tbody>
                 </table>
+            </section>
+
+            <section id="calculator">
+                <div class="calculator-container">
+                    <div class="calc-display" id="calc-screen">0</div>
+                    <div class="calc-grid">
+                        <button class="calc-btn utility" onclick="clearCalc()">C</button>
+                        <button class="calc-btn utility" onclick="deleteLastCalc()">⌫</button>
+                        <button class="calc-btn operator" onclick="inputOp('/')">÷</button>
+                        <button class="calc-btn operator" onclick="inputOp('*')">×</button>
+                        
+                        <button class="calc-btn" onclick="inputNum('7')">7</button>
+                        <button class="calc-btn" onclick="inputNum('8')">8</button>
+                        <button class="calc-btn" onclick="inputNum('9')">9</button>
+                        <button class="calc-btn operator" onclick="inputOp('-')">-</button>
+                        
+                        <button class="calc-btn" onclick="inputNum('4')">4</button>
+                        <button class="calc-btn" onclick="inputNum('5')">5</button>
+                        <button class="calc-btn" onclick="inputNum('6')">6</button>
+                        <button class="calc-btn operator" onclick="inputOp('+')">+</button>
+                        
+                        <button class="calc-btn" onclick="inputNum('1')">1</button>
+                        <button class="calc-btn" onclick="inputNum('2')">2</button>
+                        <button class="calc-btn" onclick="inputNum('3')">3</button>
+                        <button class="calc-btn equals" onclick="calculateResult()">=</button>
+                        
+                        <button class="calc-btn zero" onclick="inputNum('0')">0</button>
+                        <button class="calc-btn" onclick="inputNum('.')">.</button>
+                    </div>
+                </div>
             </section>
 
             <section id="attendance"><h2>Attendance</h2></section>
@@ -237,18 +317,71 @@
     </div>
 
 <script>
+    // --- GLOBAL STATE ---
     let currentCart = [];
     let pendingOrders = [];
     let currentBranch = "";
     let localSales = [];
     let orderCounter = 1;
     let tempSelectedItem = null;
+    let calcExpression = "0";
 
     const SHEET_ID = '1vLw8T4-9ODhbTDqlSN6OUDStpbqGX_uDB6Hq8xz8Ew8';
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0TF3xzv8kpEHP1EK62aheKU0JYJ8s97CsGXCcY67a40VInJfECxY4Q4Lc6x1FRiBC3w/exec";
 
     window.onload = function() { renderBranches(); fetchMenuData(); };
 
+    // --- CALCULATOR LOGIC ---
+    function inputNum(n) {
+        if (calcExpression === "0") calcExpression = "";
+        calcExpression += n;
+        updateCalcDisplay();
+    }
+    function inputOp(op) {
+        if (calcExpression === "0" || calcExpression === "") return;
+        const lastChar = calcExpression.slice(-1);
+        if (['+', '-', '*', '/'].includes(lastChar)) {
+            calcExpression = calcExpression.slice(0, -1) + op;
+        } else {
+            calcExpression += op;
+        }
+        updateCalcDisplay();
+    }
+    function clearCalc() { calcExpression = "0"; updateCalcDisplay(); }
+    function deleteLastCalc() {
+        calcExpression = calcExpression.toString().slice(0, -1);
+        if (calcExpression === "") calcExpression = "0";
+        updateCalcDisplay();
+    }
+    function updateCalcDisplay() { document.getElementById("calc-screen").innerText = calcExpression; }
+    function calculateResult() {
+        try {
+            const result = eval(calcExpression); // Simplified eval for local utility
+            calcExpression = Number.isInteger(result) ? result.toString() : result.toFixed(2).toString();
+            updateCalcDisplay();
+        } catch (e) {
+            calcExpression = "Error";
+            updateCalcDisplay();
+            setTimeout(clearCalc, 1000);
+        }
+    }
+
+    // --- NAVIGATION & UI ---
+    function navigateTo(id) {
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(id);
+        target.classList.add('active');
+        
+        // Fix for calculator flex display
+        if (id === 'calculator') target.style.display = 'flex';
+        else document.getElementById('calculator').style.display = 'none';
+
+        if(document.getElementById("sidebar").classList.contains("open")) toggleMenu();
+    }
+    function toggleMenu() { document.getElementById("sidebar").classList.toggle("open"); }
+    function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
+
+    // --- POS CORE LOGIC ---
     async function fetchMenuData() {
         const containers = { REGULAR: document.getElementById("regular-menu"), PREMIUM: document.getElementById("premium-menu"), OTHERS: document.getElementById("others-menu") };
         const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
@@ -283,8 +416,7 @@
             document.getElementById("milk-item-name").innerText = name;
             document.getElementById("milk-modal").classList.remove("hidden");
         } else if (category === "PREMIUM") {
-            const finalName = `${name} (Oatside)`;
-            currentCart.push({ name: finalName, price, subtotal: price, qty: 1 });
+            currentCart.push({ name: `${name} (Oatside)`, price, subtotal: price, qty: 1 });
             renderCart();
         }
     }
@@ -304,13 +436,17 @@
             document.getElementById("total-price").innerText = "₱0.00";
             return;
         }
-        let total = 0;
-        cartDiv.innerHTML = currentCart.map((item, index) => {
-            total += item.subtotal;
-            return `<div class="cart-item"><div class="cart-item-info"><span>${item.qty}x ${item.name}</span><span>₱${item.subtotal.toLocaleString()}</span></div><div class="cart-item-btns"><button class="btn-item-del" onclick="removeFromCart(${index})">X</button></div></div>`;
-        }).join('');
+        let total = currentCart.reduce((s, i) => s + i.subtotal, 0);
+        cartDiv.innerHTML = currentCart.map((item, index) => `
+            <div class="cart-item">
+                <div class="cart-item-info"><span>${item.qty}x ${item.name}</span><span>₱${item.subtotal.toLocaleString()}</span></div>
+                <div class="cart-item-btns"><button class="btn-item-del" onclick="removeFromCart(${index})">X</button></div>
+            </div>
+        `).join('');
         document.getElementById("total-price").innerText = `₱${total.toLocaleString()}`;
     }
+
+    function removeFromCart(index) { currentCart.splice(index, 1); renderCart(); }
 
     function confirmOrder() { 
         if (currentCart.length > 0) { 
@@ -330,8 +466,7 @@
     function calculateChange() {
         const total = currentCart.reduce((sum, i) => sum + i.subtotal, 0);
         const cash = parseFloat(document.getElementById("cash-amount-input").value) || 0;
-        const change = cash - total;
-        document.getElementById("change-display").innerText = `Change: ₱${Math.max(0, change).toLocaleString()}`;
+        document.getElementById("change-display").innerText = `Change: ₱${Math.max(0, cash - total).toLocaleString()}`;
     }
 
     function processFinalTransaction(method) {
@@ -353,8 +488,8 @@
                 <strong>#${index + 1}</strong> [${order.method}] - ₱${order.total.toLocaleString()}
                 <div class="details">
                     ${order.items.map(i => `<div>• ${i.qty}x ${i.name}</div>`).join('')}
-                    <button onclick="modifyOrder(event, ${order.id})" style="width:100%; background:#FF9800; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; cursor:pointer;">Modify Order</button>
-                    <button onclick="finalizeOrder(event, ${order.id})" style="width:100%; background:#4CAF50; color:white; border:none; padding:10px; margin-top:5px; border-radius:5px; font-weight:bold; cursor:pointer;">Finish Order</button>
+                    <button onclick="modifyOrder(event, ${order.id})" style="width:100%; background:#FF9800; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; cursor:pointer;">Modify</button>
+                    <button onclick="finalizeOrder(event, ${order.id})" style="width:100%; background:#4CAF50; color:white; border:none; padding:10px; margin-top:5px; border-radius:5px; font-weight:bold; cursor:pointer;">Finish</button>
                 </div>
             </div>
         `).join('');
@@ -362,7 +497,6 @@
 
     function modifyOrder(event, id) {
         event.stopPropagation();
-        if (currentCart.length > 0 && !confirm("Current Order has items. Merge items?")) return;
         const idx = pendingOrders.findIndex(o => o.id === id);
         currentCart = [...currentCart, ...pendingOrders[idx].items];
         pendingOrders.splice(idx, 1);
@@ -377,6 +511,7 @@
         saveBranchData(); renderSalesLog(); renderPending();
     }
 
+    // --- SALES LOGGING ---
     function renderSalesLog() {
         const body = document.getElementById("sales-history-body");
         const tallyContainer = document.getElementById("product-tally-list");
@@ -390,14 +525,11 @@
             if(sale.method === 'GCASH') gcashTotal += sale.total;
 
             sale.items.forEach(item => {
-                const nameUC = item.name.toUpperCase();
-                if (!nameUC.includes("FRIES")) cups += item.qty;
-                if (nameUC.includes("(OATSIDE)")) oatside += item.qty;
-                if (nameUC.includes("(REGULAR)")) regularMilk += item.qty;
-
-                Object.keys(productTally).forEach(key => {
-                    if (nameUC.includes(key.toUpperCase())) productTally[key] += item.qty;
-                });
+                const n = item.name.toUpperCase();
+                if (!n.includes("FRIES")) cups += item.qty;
+                if (n.includes("(OATSIDE)")) oatside += item.qty;
+                if (n.includes("(REGULAR)")) regularMilk += item.qty;
+                Object.keys(productTally).forEach(k => { if (n.includes(k.toUpperCase())) productTally[k] += item.qty; });
             });
             return `<tr><td>#${localSales.length-i}</td><td>${sale.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</td><td>${sale.method}</td><td>₱${sale.total.toLocaleString()}</td><td><button onclick="deleteSaleEntry(${localSales.length-1-i})" style="background:#ff5252; color:white; border:none; padding:5px 10px; border-radius:4px;">X</button></td></tr>`;
         }).join('');
@@ -408,7 +540,6 @@
         document.getElementById("total-regular-milk").innerText = regularMilk;
         document.getElementById("total-cash").innerText = `₱${cashTotal.toLocaleString()}`;
         document.getElementById("total-gcash").innerText = `₱${gcashTotal.toLocaleString()}`;
-
         tallyContainer.innerHTML = Object.entries(productTally).map(([name, count]) => `<div class="tally-item"><span class="tally-name">${name}</span><span class="tally-count">${count}</span></div>`).join('');
     }
 
@@ -439,10 +570,11 @@
         try {
             await fetch(WEB_APP_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(summary) });
             alert("✅ Synced!");
-            if(confirm("Clear logs?")) { localSales = []; saveBranchData(); renderSalesLog(); }
-        } catch (e) { alert("❌ Error"); } finally { btn.innerText = "📤 Upload"; btn.disabled = false; }
+            if(confirm("Clear local logs?")) { localSales = []; saveBranchData(); renderSalesLog(); }
+        } catch (e) { alert("❌ Sync Error"); } finally { btn.innerText = "📤 Upload"; btn.disabled = false; }
     }
 
+    // --- BRANCH & STORAGE ---
     function selectBranch(name) {
         currentBranch = name;
         document.getElementById("branch-screen").classList.add("hidden");
@@ -457,17 +589,6 @@
         localStorage.setItem(`matchaSalesLog_${currentBranch}`, JSON.stringify(localSales));
         localStorage.setItem(`matchaOrderCounter_${currentBranch}`, orderCounter);
     }
-    
-    function navigateTo(id) {
-        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(document.getElementById("sidebar").classList.contains("open")) toggleMenu();
-    }
-
-    function removeFromCart(index) { currentCart.splice(index, 1); renderCart(); }
-    function deleteSaleEntry(i) { if(confirm("Delete?")) { localSales.splice(i, 1); saveBranchData(); renderSalesLog(); } }
-    function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
-    function toggleMenu() { document.getElementById("sidebar").classList.toggle("open"); }
 
     function renderBranches() {
         const list = document.getElementById("branch-list");
@@ -486,6 +607,7 @@
             renderBranches();
         }
     }
+    function deleteSaleEntry(i) { if(confirm("Delete entry?")) { localSales.splice(i, 1); saveBranchData(); renderSalesLog(); } }
 </script>
 </body>
 </html>
