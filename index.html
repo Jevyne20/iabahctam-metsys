@@ -49,12 +49,20 @@
         .order-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; height: 100%; box-sizing: border-box;}
         .cart-box { flex-grow: 1; overflow-y: auto; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
         
+        .menu-category-header { 
+            margin: 20px 0 10px 0; 
+            font-size: 16px; 
+            color: #2d3e50; 
+            border-bottom: 2px solid #4CAF50; 
+            display: inline-block;
+            padding-bottom: 2px;
+        }
+
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 15px;
-            overflow-y: auto;
-            padding-right: 10px;
+            margin-bottom: 30px;
         }
 
         .product-card {
@@ -142,9 +150,15 @@
                         <div class="total-display" id="total-price">₱0.00</div>
                         <button class="done-btn" onclick="confirmOrder()">Confirm</button>
                     </div>
-                    <div>
-                        <h3>Menu</h3>
-                        <div class="menu-grid" id="tablet-menu"></div>
+                    <div style="overflow-y: auto; height: 100%; padding-right: 10px;">
+                        <div class="menu-category-header">🍵 Regular Drinks</div>
+                        <div class="menu-grid" id="regular-menu"></div>
+
+                        <div class="menu-category-header">🌟 Premium Drinks</div>
+                        <div class="menu-grid" id="premium-menu"></div>
+
+                        <div class="menu-category-header">🍟 Others</div>
+                        <div class="menu-grid" id="others-menu"></div>
                     </div>
                     <div class="pending-column">
                         <h3>⏳ Pending</h3>
@@ -223,23 +237,39 @@
     window.onload = function() { renderBranches(); fetchMenuData(); fetchAddonData(); };
 
     async function fetchMenuData() {
-        const menuContainer = document.getElementById("tablet-menu");
+        const regContainer = document.getElementById("regular-menu");
+        const premContainer = document.getElementById("premium-menu");
+        const otherContainer = document.getElementById("others-menu");
+
         const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         try {
             const response = await fetch(`${exportUrl}&t=${Date.now()}`);
             const data = await response.text();
             const rows = data.split(/\r?\n/).filter(row => row.trim() !== "").slice(1);
-            menuContainer.innerHTML = ''; 
+            
+            regContainer.innerHTML = ''; 
+            premContainer.innerHTML = '';
+            otherContainer.innerHTML = '';
+
             rows.forEach(row => {
                 const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const name = cols[1]?.replace(/"/g, "").trim();
+                const category = cols[2]?.replace(/"/g, "").trim().toUpperCase(); 
                 const price = parseFloat(cols[3]?.replace(/[^\d.-]/g, ""));
+
                 if (name && !isNaN(price)) {
                     const card = document.createElement("div");
                     card.className = "product-card";
                     card.onclick = () => { currentCart.push({ name, price, subtotal: price, qty: 1 }); renderCart(); };
                     card.innerHTML = `<h4>${name}</h4><div class="price">₱${price.toFixed(2)}</div>`;
-                    menuContainer.appendChild(card);
+                    
+                    if (category === "PREMIUM") {
+                        premContainer.appendChild(card);
+                    } else if (category === "REGULAR") {
+                        regContainer.appendChild(card);
+                    } else {
+                        otherContainer.appendChild(card);
+                    }
                 }
             });
         } catch (e) { console.error(e); }
@@ -356,14 +386,11 @@
 
     async function uploadDailySummary() {
         if (localSales.length === 0) return alert("No sales data to upload!");
-        
         let totalRevenue = 0, totalCups = 0, oatsideCount = 0, cashCount = 0, gcashCount = 0, itemsList = [];
-
         localSales.forEach(sale => {
             totalRevenue += sale.total;
             if (sale.method === 'CASH') cashCount++;
             else if (sale.method === 'GCASH') gcashCount++;
-
             sale.items.forEach(item => {
                 const name = item.name.toUpperCase();
                 if (!name.includes("FRIES")) totalCups += item.qty;
@@ -371,7 +398,6 @@
                 itemsList.push(`${item.qty}x ${item.name}`);
             });
         });
-
         const summaryPayload = {
             date: new Date().toLocaleDateString(),
             revenue: totalRevenue,
@@ -382,7 +408,6 @@
             branch: currentBranch || "Main Branch",
             itemsSummary: itemsList.join(' | ')
         };
-
         try {
             await fetch(WEB_APP_URL, {
                 method: "POST",
