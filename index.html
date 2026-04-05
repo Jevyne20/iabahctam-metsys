@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatchaBai POS | Dashboard Edition</title>
+    <title>MatchaBai POS | Dashboard</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7f6; overflow-x: hidden; }
         .hidden { display: none !important; }
@@ -91,7 +91,7 @@
         .total-display { font-size: 24px; font-weight: bold; margin: 15px 0; text-align: center; color: #2d3e50; border-top: 2px solid #f4f7f6; padding-top: 10px; }
         .done-btn { background: #4CAF50; color: white; border: none; padding: 18px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 18px; }
 
-        /* SALES LOG HEADER (BLUE BOX) */
+        /* SALES LOG HEADER */
         .sales-summary-card { background: #2d3e50; color: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; align-items: center; }
         .stat-box { border-left: 1px solid #455a64; padding-left: 15px; }
         .stat-label { font-size: 11px; color: #cfd8dc; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
@@ -199,8 +199,8 @@
                 </table>
             </section>
 
-            <section id="attendance"><h2>Attendance</h2><p>Track staff check-ins here.</p></section>
-            <section id="expenses"><h2>Expenses</h2><p>Log daily operational costs here.</p></section>
+            <section id="attendance"><h2>Attendance</h2></section>
+            <section id="expenses"><h2>Expenses</h2></section>
         </div>
     </div>
 
@@ -353,18 +353,28 @@
                 <strong>#${index + 1}</strong> [${order.method}] - ₱${order.total.toLocaleString()}
                 <div class="details">
                     ${order.items.map(i => `<div>• ${i.qty}x ${i.name}</div>`).join('')}
-                    <button onclick="finalizeOrder(event, ${order.id})" style="width:100%; background:#4CAF50; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold;">Finish Order</button>
+                    <button onclick="modifyOrder(event, ${order.id})" style="width:100%; background:#FF9800; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; cursor:pointer;">Modify Order</button>
+                    <button onclick="finalizeOrder(event, ${order.id})" style="width:100%; background:#4CAF50; color:white; border:none; padding:10px; margin-top:5px; border-radius:5px; font-weight:bold; cursor:pointer;">Finish Order</button>
                 </div>
             </div>
         `).join('');
     }
 
+    function modifyOrder(event, id) {
+        event.stopPropagation();
+        if (currentCart.length > 0 && !confirm("Current Order has items. Merge items?")) return;
+        const idx = pendingOrders.findIndex(o => o.id === id);
+        currentCart = [...currentCart, ...pendingOrders[idx].items];
+        pendingOrders.splice(idx, 1);
+        saveBranchData(); renderCart(); renderPending(); navigateTo('pos');
+    }
+
     function finalizeOrder(event, id) {
         event.stopPropagation();
         const idx = pendingOrders.findIndex(o => o.id === id);
-        const order = pendingOrders[idx];
-        localSales.push({ items: order.items, total: order.total, method: order.method });
-        saveBranchData(); renderSalesLog(); pendingOrders.splice(idx, 1); renderPending();
+        localSales.push({ ...pendingOrders[idx] });
+        pendingOrders.splice(idx, 1);
+        saveBranchData(); renderSalesLog(); renderPending();
     }
 
     function renderSalesLog() {
@@ -389,8 +399,7 @@
                     if (nameUC.includes(key.toUpperCase())) productTally[key] += item.qty;
                 });
             });
-            const actualIdx = localSales.length - 1 - i;
-            return `<tr><td>#${actualIdx+1}</td><td>${sale.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</td><td>${sale.method}</td><td>₱${sale.total.toLocaleString()}</td><td><button onclick="deleteSaleEntry(${actualIdx})" style="background:#ff5252; color:white; border:none; padding:5px 10px; border-radius:4px;">X</button></td></tr>`;
+            return `<tr><td>#${localSales.length-i}</td><td>${sale.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</td><td>${sale.method}</td><td>₱${sale.total.toLocaleString()}</td><td><button onclick="deleteSaleEntry(${localSales.length-1-i})" style="background:#ff5252; color:white; border:none; padding:5px 10px; border-radius:4px;">X</button></td></tr>`;
         }).join('');
 
         document.getElementById("session-total").innerText = `₱${revenue.toLocaleString()}`;
@@ -408,28 +417,22 @@
         const btn = event.target; btn.innerText = "⌛ Sending..."; btn.disabled = true;
 
         let summary = {
-            date: new Date().toLocaleDateString(),
-            revenue: 0, cups: 0, regular: 0, oatside: 0,
+            date: new Date().toLocaleDateString(), revenue: 0, cups: 0, regular: 0, oatside: 0,
             cashCount: 0, cashAmount: 0, gcashCount: 0, gcashAmount: 0,
-            branch: currentBranch || "Main Branch",
-            latte: 0, strawberry: 0, vanilla: 0, mint: 0, blueberry: 0,
-            earth: 0, choco: 0, asai: 0, coconut: 0, fries: 0
+            branch: currentBranch || "Main",
+            latte: 0, strawberry: 0, vanilla: 0, mint: 0, blueberry: 0, earth: 0, choco: 0, asai: 0, coconut: 0, fries: 0
         };
 
         localSales.forEach(sale => {
             summary.revenue += sale.total;
             if (sale.method === 'CASH') { summary.cashCount++; summary.cashAmount += sale.total; }
             else { summary.gcashCount++; summary.gcashAmount += sale.total; }
-
             sale.items.forEach(item => {
-                const nameUC = item.name.toUpperCase();
-                if (!nameUC.includes("FRIES")) summary.cups += item.qty;
-                if (nameUC.includes("(OATSIDE)")) summary.oatside += item.qty;
-                if (nameUC.includes("(REGULAR)")) summary.regular += item.qty;
-                
-                Object.keys(summary).forEach(key => {
-                    if (nameUC.includes(key.toUpperCase())) summary[key] += item.qty;
-                });
+                const n = item.name.toUpperCase();
+                if (!n.includes("FRIES")) summary.cups += item.qty;
+                if (n.includes("(OATSIDE)")) summary.oatside += item.qty;
+                if (n.includes("(REGULAR)")) summary.regular += item.qty;
+                Object.keys(summary).forEach(k => { if (n.includes(k.toUpperCase())) summary[k] += item.qty; });
             });
         });
 
@@ -447,7 +450,7 @@
         document.getElementById("active-branch-display").innerText = name;
         localSales = JSON.parse(localStorage.getItem(`matchaSalesLog_${name}`)) || [];
         orderCounter = parseInt(localStorage.getItem(`matchaOrderCounter_${name}`)) || 1;
-        renderSalesLog();
+        renderSalesLog(); renderPending();
     }
 
     function saveBranchData() {
@@ -470,8 +473,18 @@
         const list = document.getElementById("branch-list");
         let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
         let html = `<button onclick="selectBranch('Main Branch')" style="width:100%; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">🏠 Main Branch</button>`;
-        branches.forEach((b, i) => { html += `<div style="display:flex; margin-bottom:10px;"><button onclick="selectBranch('${b}')" style="flex:1; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px 0 0 8px;">📍 ${b}</button></div>`; });
+        branches.forEach((b) => { html += `<button onclick="selectBranch('${b}')" style="width:100%; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px; margin-bottom:10px;">📍 ${b}</button>`; });
         list.innerHTML = html;
+    }
+
+    function openAddBranchModal() {
+        let name = prompt("Enter Branch Name:");
+        if(name) {
+            let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
+            branches.push(name);
+            localStorage.setItem("matchaBranches", JSON.stringify(branches));
+            renderBranches();
+        }
     }
 </script>
 </body>
