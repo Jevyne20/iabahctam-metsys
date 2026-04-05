@@ -91,30 +91,35 @@
         .total-display { font-size: 24px; font-weight: bold; margin: 15px 0; text-align: center; color: #2d3e50; border-top: 2px solid #f4f7f6; padding-top: 10px; }
         .done-btn { background: #4CAF50; color: white; border: none; padding: 18px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 18px; }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2100; }
-        .modal-card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .milk-btn { padding: 20px; border: 2px solid #4CAF50; border-radius: 12px; background: white; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.2s; }
-        .milk-btn.oatside { border-color: #2196F3; color: #2196F3; }
-        
-        input.cash-input { width: 100%; padding: 15px; font-size: 24px; text-align: center; border: 2px solid #ddd; border-radius: 8px; margin: 15px 0; box-sizing: border-box;}
-
-        /* Sales summary header */
+        /* SALES LOG HEADER (BLUE BOX) */
         .sales-summary-card { background: #2d3e50; color: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; align-items: center; }
         .stat-box { border-left: 1px solid #455a64; padding-left: 15px; }
         .stat-label { font-size: 11px; color: #cfd8dc; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
         .stat-value { font-size: 18px; font-weight: bold; color: #fff; }
         .stat-value.highlight { color: #4CAF50; }
 
-        /* Tally Section */
+        /* PRODUCT TALLY (2 ROWS 5 COLUMNS) */
         .product-tally-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        .tally-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 15px; }
+        .tally-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); /* Force 5 Columns */
+            grid-template-rows: repeat(2, auto);    /* Aim for 2 Rows */
+            gap: 10px; 
+            margin-top: 15px; 
+        }
         .tally-item { background: #f8f9fa; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; border-bottom: 2px solid #e9ecef; }
-        .tally-name { font-size: 14px; font-weight: 500; color: #2d3e50; }
-        .tally-count { font-weight: bold; color: #4CAF50; }
+        .tally-name { font-size: 13px; font-weight: 500; color: #2d3e50; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tally-count { font-weight: bold; color: #4CAF50; margin-left: 5px;}
 
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        .btn-upload { background:#4CAF50; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; grid-column: span 1; }
+        .btn-upload { background:#4CAF50; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; }
+
+        /* Payment Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2100; }
+        .modal-card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+        .milk-btn { padding: 20px; border: 2px solid #4CAF50; border-radius: 12px; background: white; cursor: pointer; font-size: 18px; font-weight: bold; }
+        input.cash-input { width: 100%; padding: 15px; font-size: 24px; text-align: center; border: 2px solid #ddd; border-radius: 8px; margin: 15px 0; box-sizing: border-box;}
     </style>
 </head>
 <body>
@@ -188,8 +193,7 @@
                 <div class="product-tally-card">
                     <h4 style="margin:0; color:#2d3e50; border-left:4px solid #4CAF50; padding-left:10px;">Daily Product Tally</h4>
                     <div id="product-tally-list" class="tally-grid">
-                        <p style="color:#999;">No sales recorded yet.</p>
-                    </div>
+                        </div>
                 </div>
 
                 <table>
@@ -209,7 +213,7 @@
             <p id="milk-item-name" style="color:#666;"></p>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
                 <button class="milk-btn" onclick="addDrinkToCart('Regular', 0)">REGULAR<br><small>+₱0</small></button>
-                <button class="milk-btn oatside" onclick="addDrinkToCart('Oatside', 29)">OATSIDE<br><small>+₱29</small></button>
+                <button class="milk-btn" onclick="addDrinkToCart('Oatside', 29)" style="border-color:#2196F3; color:#2196F3;">OATSIDE<br><small>+₱29</small></button>
             </div>
             <button onclick="closeModal('milk-modal')" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer;">Cancel</button>
         </div>
@@ -401,7 +405,7 @@
         if (Object.keys(productTally).length > 0) {
             tallyContainer.innerHTML = Object.entries(productTally).map(([name, count]) => `<div class="tally-item"><span class="tally-name">${name}</span><span class="tally-count">${count}</span></div>`).join('');
         } else {
-            tallyContainer.innerHTML = '<p style="color:#999;">No sales recorded yet.</p>';
+            tallyContainer.innerHTML = '<p style="color:#999; grid-column: span 5;">No sales recorded yet.</p>';
         }
     }
 
@@ -428,7 +432,7 @@
         };
         try {
             await fetch(WEB_APP_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(summaryPayload) });
-            alert("✅ Sales Force-Committed!");
+            alert("✅ Sales Committed!");
             if(confirm("Clear local logs?")) { localSales = []; saveBranchData(); renderSalesLog(); }
         } catch (e) { alert("❌ Upload Error"); } finally { btn.innerText = "📤 Upload"; btn.disabled = false; }
     }
