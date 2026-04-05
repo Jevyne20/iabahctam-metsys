@@ -102,8 +102,8 @@
         .product-tally-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .tally-grid { 
             display: grid; 
-            grid-template-columns: repeat(5, 1fr); /* Force 5 Columns */
-            grid-template-rows: repeat(2, auto);    /* Aim for 2 Rows */
+            grid-template-columns: repeat(5, 1fr); 
+            grid-template-rows: repeat(2, auto);    
             gap: 10px; 
             margin-top: 15px; 
         }
@@ -115,7 +115,6 @@
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         .btn-upload { background:#4CAF50; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; }
 
-        /* Payment Modals */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2100; }
         .modal-card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
         .milk-btn { padding: 20px; border: 2px solid #4CAF50; border-radius: 12px; background: white; cursor: pointer; font-size: 18px; font-weight: bold; }
@@ -136,7 +135,6 @@
         <header>
             <button onclick="toggleMenu()" style="background:#4CAF50; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">☰ MENU</button>
             <span class="brand-name">MatchaBai</span>
-            <div style="width: 70px;"></div>
         </header>
 
         <div id="sidebar" class="sidebar">
@@ -192,8 +190,7 @@
 
                 <div class="product-tally-card">
                     <h4 style="margin:0; color:#2d3e50; border-left:4px solid #4CAF50; padding-left:10px;">Daily Product Tally</h4>
-                    <div id="product-tally-list" class="tally-grid">
-                        </div>
+                    <div id="product-tally-list" class="tally-grid"></div>
                 </div>
 
                 <table>
@@ -248,7 +245,7 @@
     let tempSelectedItem = null;
 
     const SHEET_ID = '1vLw8T4-9ODhbTDqlSN6OUDStpbqGX_uDB6Hq8xz8Ew8';
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxtO2faPHDiYPn3VsxFDdWEfTIUzfBm0XRnvZBeLmgyLT2lGONW41CEkKDovQKYLeSUTQ/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0TF3xzv8kpEHP1EK62aheKU0JYJ8s97CsGXCcY67a40VInJfECxY4Q4Lc6x1FRiBC3w/exec";
 
     window.onload = function() { renderBranches(); fetchMenuData(); };
 
@@ -341,7 +338,7 @@
         const total = currentCart.reduce((sum, i) => sum + i.subtotal, 0);
         if (method === 'CASH') {
             const cash = parseFloat(document.getElementById("cash-amount-input").value);
-            if (isNaN(cash) || cash < total) return alert("Insufficient Cash amount!");
+            if (isNaN(cash) || cash < total) return alert("Insufficient Cash!");
         }
         pendingOrders.push({ id: orderCounter++, items: [...currentCart], total, method });
         saveBranchData();
@@ -374,7 +371,7 @@
         const body = document.getElementById("sales-history-body");
         const tallyContainer = document.getElementById("product-tally-list");
         let revenue = 0, cups = 0, oatside = 0, regularMilk = 0, cashTotal = 0, gcashTotal = 0;
-        let productTally = {};
+        let productTally = { "Latte": 0, "Strawberry": 0, "Vanilla": 0, "Mint": 0, "Blueberry": 0, "Earth": 0, "Choco": 0, "Asai": 0, "Coconut": 0, "Fries": 0 };
 
         const history = [...localSales].reverse();
         body.innerHTML = history.map((sale, i) => {
@@ -388,8 +385,9 @@
                 if (nameUC.includes("(OATSIDE)")) oatside += item.qty;
                 if (nameUC.includes("(REGULAR)")) regularMilk += item.qty;
 
-                let baseName = item.name.split(' (')[0];
-                productTally[baseName] = (productTally[baseName] || 0) + item.qty;
+                Object.keys(productTally).forEach(key => {
+                    if (nameUC.includes(key.toUpperCase())) productTally[key] += item.qty;
+                });
             });
             const actualIdx = localSales.length - 1 - i;
             return `<tr><td>#${actualIdx+1}</td><td>${sale.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</td><td>${sale.method}</td><td>₱${sale.total.toLocaleString()}</td><td><button onclick="deleteSaleEntry(${actualIdx})" style="background:#ff5252; color:white; border:none; padding:5px 10px; border-radius:4px;">X</button></td></tr>`;
@@ -402,39 +400,44 @@
         document.getElementById("total-cash").innerText = `₱${cashTotal.toLocaleString()}`;
         document.getElementById("total-gcash").innerText = `₱${gcashTotal.toLocaleString()}`;
 
-        if (Object.keys(productTally).length > 0) {
-            tallyContainer.innerHTML = Object.entries(productTally).map(([name, count]) => `<div class="tally-item"><span class="tally-name">${name}</span><span class="tally-count">${count}</span></div>`).join('');
-        } else {
-            tallyContainer.innerHTML = '<p style="color:#999; grid-column: span 5;">No sales recorded yet.</p>';
-        }
+        tallyContainer.innerHTML = Object.entries(productTally).map(([name, count]) => `<div class="tally-item"><span class="tally-name">${name}</span><span class="tally-count">${count}</span></div>`).join('');
     }
 
     async function uploadDailySummary() {
-        if (localSales.length === 0) return alert("No sales data to upload!");
+        if (localSales.length === 0) return alert("No data to upload!");
         const btn = event.target; btn.innerText = "⌛ Sending..."; btn.disabled = true;
-        let totalRevenue = 0, totalCups = 0, oatsideCount = 0, itemsList = [];
+
+        let summary = {
+            date: new Date().toLocaleDateString(),
+            revenue: 0, cups: 0, regular: 0, oatside: 0,
+            cashCount: 0, cashAmount: 0, gcashCount: 0, gcashAmount: 0,
+            branch: currentBranch || "Main Branch",
+            latte: 0, strawberry: 0, vanilla: 0, mint: 0, blueberry: 0,
+            earth: 0, choco: 0, asai: 0, coconut: 0, fries: 0
+        };
+
         localSales.forEach(sale => {
-            totalRevenue += sale.total;
+            summary.revenue += sale.total;
+            if (sale.method === 'CASH') { summary.cashCount++; summary.cashAmount += sale.total; }
+            else { summary.gcashCount++; summary.gcashAmount += sale.total; }
+
             sale.items.forEach(item => {
-                const name = item.name.toUpperCase();
-                if (!name.includes("FRIES")) totalCups += item.qty;
-                if (name.includes("OATSIDE")) oatsideCount += item.qty;
-                itemsList.push(`${item.qty}x ${item.name}`);
+                const nameUC = item.name.toUpperCase();
+                if (!nameUC.includes("FRIES")) summary.cups += item.qty;
+                if (nameUC.includes("(OATSIDE)")) summary.oatside += item.qty;
+                if (nameUC.includes("(REGULAR)")) summary.regular += item.qty;
+                
+                Object.keys(summary).forEach(key => {
+                    if (nameUC.includes(key.toUpperCase())) summary[key] += item.qty;
+                });
             });
         });
-        const summaryPayload = {
-            date: new Date().toLocaleString(),
-            revenue: totalRevenue,
-            cups: totalCups,
-            oatside: oatsideCount,
-            branch: currentBranch || "Main Branch",
-            itemsSummary: itemsList.join(' | ')
-        };
+
         try {
-            await fetch(WEB_APP_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(summaryPayload) });
-            alert("✅ Sales Committed!");
-            if(confirm("Clear local logs?")) { localSales = []; saveBranchData(); renderSalesLog(); }
-        } catch (e) { alert("❌ Upload Error"); } finally { btn.innerText = "📤 Upload"; btn.disabled = false; }
+            await fetch(WEB_APP_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(summary) });
+            alert("✅ Synced!");
+            if(confirm("Clear logs?")) { localSales = []; saveBranchData(); renderSalesLog(); }
+        } catch (e) { alert("❌ Error"); } finally { btn.innerText = "📤 Upload"; btn.disabled = false; }
     }
 
     function selectBranch(name) {
@@ -467,18 +470,8 @@
         const list = document.getElementById("branch-list");
         let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
         let html = `<button onclick="selectBranch('Main Branch')" style="width:100%; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">🏠 Main Branch</button>`;
-        branches.forEach((b, i) => { html += `<div style="display:flex; margin-bottom:10px;"><button onclick="selectBranch('${b}')" style="flex:1; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px 0 0 8px;">📍 ${b}</button><button onclick="deleteBranch(${i})" style="background:#ff5252; color:white; border:none; width:45px; border-radius:0 8px 8px 0;">×</button></div>`; });
+        branches.forEach((b, i) => { html += `<div style="display:flex; margin-bottom:10px;"><button onclick="selectBranch('${b}')" style="flex:1; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px 0 0 8px;">📍 ${b}</button></div>`; });
         list.innerHTML = html;
-    }
-
-    function openAddBranchModal() {
-        let name = prompt("Enter Branch Name:");
-        if(name) {
-            let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
-            branches.push(name);
-            localStorage.setItem("matchaBranches", JSON.stringify(branches));
-            renderBranches();
-        }
     }
 </script>
 </body>
