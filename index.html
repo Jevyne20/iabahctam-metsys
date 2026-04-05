@@ -80,8 +80,7 @@
             border-radius: 8px; border-left: 4px solid #4CAF50;
         }
         .cart-item-info { display: flex; justify-content: space-between; font-weight: bold; }
-        .cart-item-btns { display: flex; gap: 8px; margin-top: 8px; }
-        .btn-add-on { flex: 1; background: #FF9800; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .cart-item-btns { display: flex; justify-content: flex-end; margin-top: 8px; }
         .btn-item-del { background: #ff5252; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
         .order-card { border: 2px solid #FF9800; background: white; border-radius: 10px; padding: 12px; cursor: pointer; transition: 0.3s; margin-bottom: 10px;}
@@ -92,23 +91,20 @@
         .total-display { font-size: 24px; font-weight: bold; margin: 15px 0; text-align: center; color: #2d3e50; border-top: 2px solid #f4f7f6; padding-top: 10px; }
         .done-btn { background: #4CAF50; color: white; border: none; padding: 18px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 18px; }
 
-        .sales-summary-card { 
-            background: #2d3e50; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; 
-            display: flex; gap: 15px; flex-wrap: wrap; align-items: center;
-        }
-        .stat-box { flex: 1; min-width: 100px; border-left: 1px solid #455a64; padding-left: 15px; }
-        .stat-box:first-child { border-left: none; padding-left: 0; }
-        .stat-label { font-size: 11px; color: #cfd8dc; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-value { font-size: 22px; font-weight: bold; margin-top: 4px; }
+        /* Modal Enhancements */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2100; }
+        .modal-card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .milk-btn { padding: 20px; border: 2px solid #4CAF50; border-radius: 12px; background: white; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.2s; }
+        .milk-btn:hover { background: #e8f5e9; }
+        .milk-btn.oatside { border-color: #2196F3; color: #2196F3; }
+        
+        input.cash-input { width: 100%; padding: 15px; font-size: 24px; text-align: center; border: 2px solid #ddd; border-radius: 8px; margin: 15px 0; box-sizing: border-box;}
 
+        /* Sales summary cards */
+        .sales-summary-card { background: #2d3e50; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; }
+        .stat-box { flex: 1; min-width: 100px; border-left: 1px solid #455a64; padding-left: 15px; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; font-size: 12px; text-transform: uppercase; }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2100; }
-        .modal-card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
-        .addon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .addon-item-btn { padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -153,10 +149,8 @@
                     <div style="overflow-y: auto; height: 100%; padding-right: 10px;">
                         <div class="menu-category-header">🍵 Regular Drinks</div>
                         <div class="menu-grid" id="regular-menu"></div>
-
                         <div class="menu-category-header">🌟 Premium Drinks</div>
                         <div class="menu-grid" id="premium-menu"></div>
-
                         <div class="menu-category-header">🍟 Others</div>
                         <div class="menu-grid" id="others-menu"></div>
                     </div>
@@ -173,42 +167,27 @@
                         <div class="stat-label">Total Revenue</div>
                         <div id="session-total" class="stat-value">₱0</div>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Cups Sold</div>
-                        <div id="total-cups" class="stat-value" style="color: #4CAF50;">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Oatside</div>
-                        <div id="total-oatside" class="stat-value" style="color: #2196F3;">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Cash</div>
-                        <div id="total-cash" class="stat-value" style="color: #FF9800;">₱0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Gcash</div>
-                        <div id="total-gcash" class="stat-value" style="color: #03A9F4;">₱0</div>
-                    </div>
-                    <button onclick="uploadDailySummary()" style="background:#4CAF50; color:white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer; margin-left: 10px;">📤 Upload</button>
+                    <div class="stat-box"><div class="stat-label">Cups</div><div id="total-cups" class="stat-value">0</div></div>
+                    <div class="stat-box"><div class="stat-label">Oatside</div><div id="total-oatside" class="stat-value">0</div></div>
+                    <button onclick="uploadDailySummary()" style="background:#4CAF50; color:white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer;">📤 Upload</button>
                 </div>
                 <table>
-                    <thead>
-                        <tr><th>Order #</th><th>Items</th><th>Method</th><th>Total</th><th>Action</th></tr>
-                    </thead>
+                    <thead><tr><th>Order #</th><th>Items</th><th>Method</th><th>Total</th><th>Action</th></tr></thead>
                     <tbody id="sales-history-body"></tbody>
                 </table>
             </section>
-
-            <section id="attendance"><h2>Attendance</h2><p>Track staff check-ins here.</p></section>
-            <section id="expenses"><h2>Expenses</h2><p>Log daily operational costs here.</p></section>
         </div>
     </div>
 
-    <div id="addon-modal" class="modal-overlay hidden">
+    <div id="milk-modal" class="modal-overlay hidden">
         <div class="modal-card">
-            <h3>Add Modifiers to <br><span id="target-item-label" style="color:#4CAF50;"></span></h3>
-            <div class="addon-grid" id="addon-selection-area"></div>
-            <button onclick="closeAddonModal()" style="margin-top:20px; width:100%; padding:10px; background:#eee; border:none; border-radius:8px; cursor:pointer;">Cancel</button>
+            <h3>Select Milk Type</h3>
+            <p id="milk-item-name" style="color:#666;"></p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+                <button class="milk-btn" onclick="addDrinkToCart('Regular', 0)">REGULAR<br><small>+₱0</small></button>
+                <button class="milk-btn oatside" onclick="addDrinkToCart('Oatside', 29)">OATSIDE<br><small>+₱29</small></button>
+            </div>
+            <button onclick="closeModal('milk-modal')" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer;">Cancel</button>
         </div>
     </div>
 
@@ -216,9 +195,19 @@
         <div class="modal-card">
             <h3>Select Payment</h3>
             <div id="payment-total-display" style="font-size: 32px; font-weight: bold; margin-bottom: 25px; color: #4CAF50;">₱0.00</div>
-            <button onclick="processFinalTransaction('CASH')" style="background:#4CAF50; color:white; padding:20px; width:100%; border-radius:12px; margin-bottom:10px; border:none; cursor:pointer;">💵 CASH</button>
-            <button onclick="processFinalTransaction('GCASH')" style="background:#007bff; color:white; padding:20px; width:100%; border-radius:12px; border:none; cursor:pointer;">📱 GCASH</button>
-            <button onclick="closePaymentModal()" style="margin-top:20px; background:none; border:none; color:#666; cursor:pointer;">Cancel</button>
+            <button onclick="showCashInput()" style="background:#4CAF50; color:white; padding:20px; width:100%; border-radius:12px; margin-bottom:10px; border:none; cursor:pointer; font-weight:bold;">💵 CASH</button>
+            <button onclick="processFinalTransaction('GCASH')" style="background:#007bff; color:white; padding:20px; width:100%; border-radius:12px; border:none; cursor:pointer; font-weight:bold;">📱 GCASH</button>
+            <button onclick="closeModal('payment-modal')" style="margin-top:20px; background:none; border:none; color:#666; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="cash-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3>Enter Amount</h3>
+            <input type="number" id="cash-amount-input" class="cash-input" placeholder="0.00" oninput="calculateChange()">
+            <div id="change-display" style="font-size: 20px; margin: 10px 0; color: #ff5252; font-weight: bold;">Change: ₱0.00</div>
+            <button onclick="processFinalTransaction('CASH')" style="background:#4CAF50; color:white; padding:15px; width:100%; border-radius:10px; border:none; cursor:pointer; font-weight:bold; font-size:18px;">Confirm Payment</button>
+            <button onclick="closeModal('cash-modal')" style="margin-top:15px; background:none; border:none; color:#999; cursor:pointer;">Back</button>
         </div>
     </div>
 
@@ -227,29 +216,23 @@
     let pendingOrders = [];
     let currentBranch = "";
     let localSales = [];
-    let addonsList = [];
     let orderCounter = 1;
-    let activeCartIndex = null;
+    let tempSelectedItem = null; // Stores item temporarily while choosing milk
 
     const SHEET_ID = '1vLw8T4-9ODhbTDqlSN6OUDStpbqGX_uDB6Hq8xz8Ew8';
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxtO2faPHDiYPn3VsxFDdWEfTIUzfBm0XRnvZBeLmgyLT2lGONW41CEkKDovQKYLeSUTQ/exec";
 
-    window.onload = function() { renderBranches(); fetchMenuData(); fetchAddonData(); };
+    window.onload = function() { renderBranches(); fetchMenuData(); };
 
     async function fetchMenuData() {
-        const regContainer = document.getElementById("regular-menu");
-        const premContainer = document.getElementById("premium-menu");
-        const otherContainer = document.getElementById("others-menu");
-
+        const containers = { REGULAR: document.getElementById("regular-menu"), PREMIUM: document.getElementById("premium-menu"), OTHERS: document.getElementById("others-menu") };
         const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
         try {
             const response = await fetch(`${exportUrl}&t=${Date.now()}`);
             const data = await response.text();
             const rows = data.split(/\r?\n/).filter(row => row.trim() !== "").slice(1);
             
-            regContainer.innerHTML = ''; 
-            premContainer.innerHTML = '';
-            otherContainer.innerHTML = '';
+            Object.values(containers).forEach(c => c.innerHTML = '');
 
             rows.forEach(row => {
                 const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
@@ -260,32 +243,33 @@
                 if (name && !isNaN(price)) {
                     const card = document.createElement("div");
                     card.className = "product-card";
-                    card.onclick = () => { currentCart.push({ name, price, subtotal: price, qty: 1 }); renderCart(); };
+                    card.onclick = () => handleItemClick(name, price);
                     card.innerHTML = `<h4>${name}</h4><div class="price">₱${price.toFixed(2)}</div>`;
                     
-                    if (category === "PREMIUM") {
-                        premContainer.appendChild(card);
-                    } else if (category === "REGULAR") {
-                        regContainer.appendChild(card);
-                    } else {
-                        otherContainer.appendChild(card);
-                    }
+                    if (containers[category]) containers[category].appendChild(card);
+                    else containers.OTHERS.appendChild(card);
                 }
             });
         } catch (e) { console.error(e); }
     }
 
-    async function fetchAddonData() {
-        const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1341155579`;
-        try {
-            const response = await fetch(`${exportUrl}&t=${Date.now()}`);
-            const data = await response.text();
-            const rows = data.split(/\r?\n/).filter(row => row.trim() !== "").slice(1);
-            addonsList = rows.map(row => {
-                const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                return { name: cols[1]?.replace(/"/g, "").trim(), price: parseFloat(cols[3]?.replace(/[^\d.-]/g, "")) };
-            }).filter(a => a.name && !isNaN(a.price));
-        } catch (e) { console.error(e); }
+    function handleItemClick(name, price) {
+        if (name.toUpperCase().includes("FRIES")) {
+            currentCart.push({ name, price, subtotal: price, qty: 1 });
+            renderCart();
+        } else {
+            tempSelectedItem = { name, price };
+            document.getElementById("milk-item-name").innerText = name;
+            document.getElementById("milk-modal").classList.remove("hidden");
+        }
+    }
+
+    function addDrinkToCart(milkType, extraPrice) {
+        const finalName = `${tempSelectedItem.name} (${milkType})`;
+        const finalPrice = tempSelectedItem.price + extraPrice;
+        currentCart.push({ name: finalName, price: finalPrice, subtotal: finalPrice, qty: 1 });
+        renderCart();
+        closeModal('milk-modal');
     }
 
     function renderCart() {
@@ -298,42 +282,45 @@
         let total = 0;
         cartDiv.innerHTML = currentCart.map((item, index) => {
             total += item.subtotal;
-            const isFries = item.name.toUpperCase().includes("FRIES");
-            const addonBtn = isFries ? '' : `<button class="btn-add-on" onclick="openAddonModal(${index})">+ Add</button>`;
             return `
                 <div class="cart-item">
                     <div class="cart-item-info"><span>${item.qty}x ${item.name}</span><span>₱${item.subtotal.toLocaleString()}</span></div>
-                    <div class="cart-item-btns">${addonBtn}<button class="btn-item-del" onclick="removeFromCart(${index})">X</button></div>
+                    <div class="cart-item-btns"><button class="btn-item-del" onclick="removeFromCart(${index})">X</button></div>
                 </div>`;
         }).join('');
         document.getElementById("total-price").innerText = `₱${total.toLocaleString()}`;
     }
 
-    function openAddonModal(index) {
-        activeCartIndex = index;
-        document.getElementById("target-item-label").innerText = currentCart[index].name;
-        const grid = document.getElementById("addon-selection-area");
-        grid.innerHTML = addonsList.map(addon => `<button class="addon-item-btn" onclick="applyAddon('${addon.name}', ${addon.price})">${addon.name}<br><small>+₱${addon.price}</small></button>`).join('');
-        document.getElementById("addon-modal").classList.remove("hidden");
+    function showCashInput() {
+        document.getElementById("payment-modal").classList.add("hidden");
+        document.getElementById("cash-modal").classList.remove("hidden");
+        document.getElementById("cash-amount-input").value = "";
+        document.getElementById("change-display").innerText = "Change: ₱0.00";
+        setTimeout(() => document.getElementById("cash-amount-input").focus(), 300);
     }
 
-    function applyAddon(addonName, addonPrice) {
-        const item = currentCart[activeCartIndex];
-        if (!item.name.includes(addonName)) {
-            item.name += ` + ${addonName}`;
-            item.price += addonPrice;
-            item.subtotal = item.qty * item.price;
-            renderCart();
-        }
-        closeAddonModal();
+    function calculateChange() {
+        const total = currentCart.reduce((sum, i) => sum + i.subtotal, 0);
+        const cash = parseFloat(document.getElementById("cash-amount-input").value) || 0;
+        const change = cash - total;
+        document.getElementById("change-display").innerText = `Change: ₱${Math.max(0, change).toLocaleString()}`;
     }
 
     function processFinalTransaction(method) {
         const total = currentCart.reduce((sum, i) => sum + i.subtotal, 0);
+        
+        if (method === 'CASH') {
+            const cash = parseFloat(document.getElementById("cash-amount-input").value);
+            if (isNaN(cash) || cash < total) return alert("Insufficient Cash amount!");
+        }
+
         pendingOrders.push({ id: orderCounter++, items: [...currentCart], total, method });
         saveBranchData();
-        currentCart = []; renderCart(); renderPending();
-        document.getElementById("payment-modal").classList.add("hidden");
+        currentCart = []; 
+        renderCart(); 
+        renderPending();
+        closeModal('payment-modal');
+        closeModal('cash-modal');
     }
 
     function renderPending() {
@@ -343,7 +330,7 @@
                 <strong>#${index + 1}</strong> [${order.method}] - ₱${order.total.toLocaleString()}
                 <div class="details">
                     ${order.items.map(i => `<div>• ${i.qty}x ${i.name}</div>`).join('')}
-                    <button onclick="finalizeOrder(event, ${order.id})" style="width:100%; background:#4CAF50; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px;">Finish</button>
+                    <button onclick="finalizeOrder(event, ${order.id})" style="width:100%; background:#4CAF50; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold;">Finish Order</button>
                 </div>
             </div>
         `).join('');
@@ -359,20 +346,16 @@
 
     function renderSalesLog() {
         const body = document.getElementById("sales-history-body");
-        let revenue = 0, cups = 0, oatside = 0, cash = 0, gcash = 0;
+        let revenue = 0, cups = 0, oatside = 0;
 
         const history = [...localSales].reverse();
         body.innerHTML = history.map((sale, i) => {
             revenue += sale.total;
-            if (sale.method === 'CASH') cash += sale.total;
-            else gcash += sale.total;
-
             sale.items.forEach(item => {
                 const name = item.name.toUpperCase();
                 if (!name.includes("FRIES")) cups += item.qty;
                 if (name.includes("OATSIDE")) oatside += item.qty;
             });
-
             const actualIdx = localSales.length - 1 - i;
             return `<tr><td>#${actualIdx+1}</td><td>${sale.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</td><td>${sale.method}</td><td>₱${sale.total.toLocaleString()}</td><td><button onclick="deleteSaleEntry(${actualIdx})" style="background:#ff5252; color:white; border:none; padding:5px 10px; border-radius:4px;">X</button></td></tr>`;
         }).join('');
@@ -380,50 +363,6 @@
         document.getElementById("session-total").innerText = `₱${revenue.toLocaleString()}`;
         document.getElementById("total-cups").innerText = cups;
         document.getElementById("total-oatside").innerText = oatside;
-        document.getElementById("total-cash").innerText = `₱${cash.toLocaleString()}`;
-        document.getElementById("total-gcash").innerText = `₱${gcash.toLocaleString()}`;
-    }
-
-    async function uploadDailySummary() {
-        if (localSales.length === 0) return alert("No sales data to upload!");
-        let totalRevenue = 0, totalCups = 0, oatsideCount = 0, cashCount = 0, gcashCount = 0, itemsList = [];
-        localSales.forEach(sale => {
-            totalRevenue += sale.total;
-            if (sale.method === 'CASH') cashCount++;
-            else if (sale.method === 'GCASH') gcashCount++;
-            sale.items.forEach(item => {
-                const name = item.name.toUpperCase();
-                if (!name.includes("FRIES")) totalCups += item.qty;
-                if (name.includes("OATSIDE")) oatsideCount += item.qty;
-                itemsList.push(`${item.qty}x ${item.name}`);
-            });
-        });
-        const summaryPayload = {
-            date: new Date().toLocaleDateString(),
-            revenue: totalRevenue,
-            cups: totalCups,
-            oatside: oatsideCount,
-            cashCount: cashCount,
-            gcashCount: gcashCount,
-            branch: currentBranch || "Main Branch",
-            itemsSummary: itemsList.join(' | ')
-        };
-        try {
-            await fetch(WEB_APP_URL, {
-                method: "POST",
-                mode: "no-cors", 
-                body: JSON.stringify(summaryPayload)
-            });
-            alert("✅ Sales Log successfully synced to Excel!");
-            if(confirm("Would you like to clear the local session log?")) {
-                localSales = [];
-                saveBranchData();
-                renderSalesLog();
-            }
-        } catch (e) {
-            console.error(e);
-            alert("❌ Error: Could not reach the spreadsheet.");
-        }
     }
 
     function selectBranch(name) {
@@ -436,23 +375,24 @@
         renderSalesLog();
     }
 
+    function saveBranchData() {
+        localStorage.setItem(`matchaSalesLog_${currentBranch}`, JSON.stringify(localSales));
+        localStorage.setItem(`matchaOrderCounter_${currentBranch}`, orderCounter);
+    }
+    
     function navigateTo(id) {
         document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         if(document.getElementById("sidebar").classList.contains("open")) toggleMenu();
     }
 
-    function saveBranchData() {
-        localStorage.setItem(`matchaSalesLog_${currentBranch}`, JSON.stringify(localSales));
-        localStorage.setItem(`matchaOrderCounter_${currentBranch}`, orderCounter);
-    }
+    function confirmOrder() { if (currentCart.length > 0) { document.getElementById("payment-total-display").innerText = document.getElementById("total-price").innerText; document.getElementById("payment-modal").classList.remove("hidden"); } }
     function removeFromCart(index) { currentCart.splice(index, 1); renderCart(); }
     function deleteSaleEntry(i) { if(confirm("Delete?")) { localSales.splice(i, 1); saveBranchData(); renderSalesLog(); } }
-    function confirmOrder() { if (currentCart.length > 0) { document.getElementById("payment-total-display").innerText = document.getElementById("total-price").innerText; document.getElementById("payment-modal").classList.remove("hidden"); } }
-    function closeAddonModal() { document.getElementById("addon-modal").classList.add("hidden"); }
-    function closePaymentModal() { document.getElementById("payment-modal").classList.add("hidden"); }
+    function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
     function toggleMenu() { document.getElementById("sidebar").classList.toggle("open"); }
 
+    // Branch Management
     function renderBranches() {
         const list = document.getElementById("branch-list");
         let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
@@ -461,22 +401,21 @@
         list.innerHTML = html;
     }
 
-    function deleteBranch(i) {
-        if(confirm("Delete branch and its data?")) {
-            let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
-            localStorage.removeItem(`matchaSalesLog_${branches[i]}`);
-            localStorage.removeItem(`matchaOrderCounter_${branches[i]}`);
-            branches.splice(i, 1);
-            localStorage.setItem("matchaBranches", JSON.stringify(branches));
-            renderBranches();
-        }
-    }
-
     function openAddBranchModal() {
         let name = prompt("Enter Branch Name:");
         if(name) {
             let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
             branches.push(name);
+            localStorage.setItem("matchaBranches", JSON.stringify(branches));
+            renderBranches();
+        }
+    }
+
+    function deleteBranch(i) {
+        if(confirm("Delete branch data?")) {
+            let branches = JSON.parse(localStorage.getItem("matchaBranches")) || [];
+            localStorage.removeItem(`matchaSalesLog_${branches[i]}`);
+            branches.splice(i, 1);
             localStorage.setItem("matchaBranches", JSON.stringify(branches));
             renderBranches();
         }
